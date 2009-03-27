@@ -1,35 +1,38 @@
-use Test::More tests=>5;
-use MooseX::Types::Structured qw(Tuple slurpy);
-use MooseX::Types qw(Str Object);
 
-use_ok 'MooseX::Meta::TypeConstraint::Structured';
-use_ok 'Moose::Util::TypeConstraints';
+use Test::More tests=>8; {
+	
+	use strict;
+	use warnings;
+	
+	use_ok 'MooseX::Meta::TypeConstraint::Dependent';
+	use_ok 'Moose::Util::TypeConstraints';
 
-ok my $int = find_type_constraint('Int') => 'Got Int';
-ok my $str = find_type_constraint('Str') => 'Got Str';
-ok my $obj = find_type_constraint('Object') => 'Got Object';
-ok my $arrayref = find_type_constraint('ArrayRef') => 'Got ArrayRef';
+	## A sample dependent type constraint the requires two ints and see which
+	## is the greater.
+	
+	ok my $int = find_type_constraint('Int') => 'Got Int';
+	
+	my $dep_tc = MooseX::Meta::TypeConstraint::Dependent->new(
+		name => "MooseX::Types::Dependent::Depending" ,
+		parent => find_type_constraint('ArrayRef'),
+		dependent_type_constraint=>$int,
+		comparision_callback=>sub {
+			my ($constraining_value, $check_value) = @_;
+			return $constraining_value > $check_value ? 0:1;
+		},
+		constraint_generator =>$int,
+		constraint_generator=> sub { 
+			my ($callback, $constraining_value, $check_value) = @_;
+			return $callback->($constraining_value, $check_value) ? 1:0;
+		},
+	);
+	
+	## Does this work at all?
 
-my $a = [1,2,3,4];
+	isa_ok $dep_tc, 'MooseX::Meta::TypeConstraint::Dependent';
 
-
-package Dependent;
-
-use overload(
-	'&{}' => sub {
-		warn 'sdfsdfsdfsdfsdf';
-		return sub {};
- 	},
-);
-
-sub new {
-	my $class = shift @_;
-	return bless {a=>1}, $class;
+	ok !$dep_tc->check([5,10]), "Fails, 5 is less than 10";
+	ok !$dep_tc->check(['a',10]), "Fails, 'a' is not an Int.";
+	ok !$dep_tc->check([5,'b']), "Fails, 'b' is not an Int either.";
+	ok $dep_tc->check([10,5]), "Success, 10 is greater than 5.";
 }
-
-1;
-
-my $dependent = Dependent->new($int);
-
-$dependent->();
-

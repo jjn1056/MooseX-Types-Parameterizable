@@ -1,206 +1,169 @@
 package MooseX::Types::Dependent;
 
-use strict;
-use warnings;
+use 5.008;
 
+use Moose::Util::TypeConstraints;
+use MooseX::Meta::TypeConstraint::Dependent;
+use MooseX::Types -declare => [qw(Depending)];
 
-#use Carp::Clan qw( ^MooseX::Types );
-use Moose::Util::TypeConstraints ();
-use Scalar::Util qw(blessed);
-
-use overload(
-    '""' => sub {
-    		my $self = shift @_;
-    		if(blessed $self) {
-        		return $self->__internal_type_constraint->name;     		
-    		} else {
-    			return "$self";
-    		}
-    },
-    fallback => 1,
-);
+our $VERSION = '0.01';
+our $AUTHORITY = 'cpan:JJNAPIORK';
 
 =head1 NAME
 
-MooseX::Types::Dependent - Type Constraints that are dependent on others
+MooseX::Types::Dependent - L<MooseX::Types> constraints that depend on values.
 
 =head1 SYNOPSIS
 
-    use MooseX::Types::Dependent;
-    
-    ## Assuming the type constraint 'Set' isa Set::Scalar
+        TDB:  Syntax to be determined.  Canonical is:
+        
+        subtype UniqueInt,
+          as Depending[
+            Int,
+            sub {
+              shift->not_exists(shift);
+            },
+            Set,
+          ];
+          
+        possible sugar options
+        
+        Depending 
+        as Depending sub :Set {} Int;
+        depending(Set $set) { $set->exists($Int) } Int;
+        
+        May have some ready to go, such as
+        as isGreaterThan[
+                Int,
+                Int,
+        ];
+        
+        as isMemberOf[
+                Int
+                Set,
+        ]
+        
+        ## using object for comparison
+        
+        as Dependent[Int, CompareCmd, Int];
 
-    subtype UniqueInt,
-      as Dependent[Int,Set],
-      where {
-        ## ok Set->check($set), 'Good $set';
-        ## ok Int->check($val), 'Already an Int'
-        my ($set, $val) = @_;
-        ## If the $set already has $val, then it's not unique
-        return $set->has($val) ? 0:1
-      };
-      
-    my $set = Set::Scalar->new(1..10);
-    
-    ok UniqueInt->check([1, $set]);  ## Fails, 1 is already in $set;
-    ok UniqueInt->check(['a', $set]); ## Fails, 'a' is not an Int;
-    ok UniqueInt->check([1, $obj]); ## Fails, $obj is not a Set;
-    ok UniqueInt->check([20, $set]); ## PASSES
+Please see the test cases for more examples.
+
+=head1 DEFINITIONS
+
+The following is a list of terms used in this documentation.
+
+=head2 Dependent Type Constraint
+
+=head2 Check Value
+
+=head2 Constraining Type Constraint
+
+=head2 Constraining Value
 
 =head1 DESCRIPTION
 
-This is a decorator object that contains an underlying type constraint.  We use
-this to control access to the type constraint and to add some features.
+A dependent type is a type constraint whose validity is dependent on a second
+value.  You defined the dependent type constraint with a primary type constraint
+(such as 'Int') a 'constraining' value type constraint (such as a Set object)
+and a coderef which will compare the incoming value to be checked with a value
+that conforms to the constraining type constraint.  Typically there should be a
+comparision operator between the check value and the constraining value
 
-=head1 METHODS
+=head2 Subtyping a Dependent type constraints
 
-This class defines the following methods.
+        TDB: Need discussion and examples.
 
-=head2 new
+=head2 Coercions
 
-Old school instantiation
+        TBD: Need discussion and example of coercions working for both the
+        constrainted and dependent type constraint.
 
-=cut
+=head2 Recursion
 
-sub new {
-    my $class = shift @_;
-    my $attributes = {};
-    if(my $
-    if(my $arg = shift @_) {
-        if(blessed $arg && $arg->isa('Moose::Meta::TypeConstraint')) {
-            return bless {'__type_constraint'=>$arg}, $class;
-        } elsif(
-            blessed $arg &&
-            $arg->isa('MooseX::Types::UndefinedType') 
-          ) {
-            ## stub in case we'll need to handle these types differently
-            return bless {'__type_constraint'=>$arg}, $class;
-        } elsif(blessed $arg) {
-            croak "Argument must be ->isa('Moose::Meta::TypeConstraint') or ->isa('MooseX::Types::UndefinedType'), not ". blessed $arg;
-        } else {
-            croak "Argument cannot be '$arg'";
-        }
-    } else {
-        croak "This method [new] requires a single argument.";        
-    }
-}
+Newer versions of L<MooseX::Types> support recursive type constraints.  That is
+you can include a type constraint as a contained type constraint of itself.
+Recursion is support in both the dependent and constraining type constraint. For
+example:
 
-=head2 __internal_type_constraint ($type_constraint)
+        TBD
 
-Set/Get the type_constraint we are making dependent.
+=head1 TYPE CONSTRAINTS
 
-=cut
+This type library defines the following constraints.
 
-sub __internal_type_constraint {
-    my $self = shift @_;    
-    if(blessed $self) {
-        if(defined(my $tc = shift @_)) {
-            $self->{__type_constraint} = $tc;
-        }
-        return $self->{__type_constraint};        
-    } else {
-        croak 'cannot call __internal_type_constraint as a class method';
-    }
-}
+=head2 Depending[$dependent_tc, $codref, $constraining_tc]
 
-=head2 isa
+Create a subtype of $dependent_tc that is constrainted by a value that is a
+valid $constraining_tc using $coderef.  For example;
 
-handle $self->isa since AUTOLOAD can't.
+    subtype GreaterThanInt,
+      as Depending[
+        Int,
+        sub {
+          my($constraining_value, $check_value) = @_;
+          return $constraining_value > $check_value ? 1:0;
+        },
+        Int,
+      ];
 
-=cut
+This would create a type constraint that takes an integer and checks it against
+a second integer, requiring that the check value is greater.  For example:
 
-sub isa {
-    my ($self, $target) = @_;  
-    if(defined $target) {
-    	if(blessed $self) {
-    		return $self->__internal_type_constraint->isa($target);
-    	} else {
-    		return;
-    	}
-    } else {
-        return;
-    }
-}
+        GreaterThanInt->check(5,10);  ## Fails, 5 is less than 10
+        GreaterThanInt->check('a',10); ## Fails, 'a' is not an Int.
+        GreaterThanInt->check(5,'b'); ## Fails, 'b' is not an Int either.
+        GreaterThanInt->check(10,5); ## Success, 10 is greater than 5.
 
-=head2 can
+=head1 EXAMPLES
 
-handle $self->can since AUTOLOAD can't.
+Here are some additional example usage for structured types.  All examples can
+be found also in the 't/examples.t' test.  Your contributions are also welcomed.
+
+        TBD
 
 =cut
 
-sub can {
-    my ($self, $target) = @_;
-    if(defined $target) {
-    	if(blessed $self) {
-    		return $self->__internal_type_constraint->can($target);
-    	} else {
-    		return;
-    	}
-    } else {
-        return;
-    }
-}
+Moose::Util::TypeConstraints::get_type_constraint_registry->add_type_constraint(
+	MooseX::Meta::TypeConstraint::Dependent->new(
+		name => "MooseX::Types::Dependent::Depending" ,
+		parent => find_type_constraint('ArrayRef'),
+		constraint_generator=> sub { 
+                my ($callback, $constraining_value, $check_value) = @_;
+                return $callback->($constraining_value, $check_value) ? 1:0;
+		},
+	)
+);
+	
+=head1 SEE ALSO
 
-=head2 meta
+The following modules or resources may be of interest.
 
-have meta examine the underlying type constraints
+L<Moose>, L<MooseX::Types>, L<Moose::Meta::TypeConstraint>,
+L<MooseX::Meta::TypeConstraint::Dependent>
 
-=cut
+=head1 TODO
 
-sub meta {
-	my $self = shift @_;
-	if(blessed $self) {
-		return $self->__internal_type_constraint->meta;
-	} 
-}
+Here's a list of stuff I would be happy to get volunteers helping with:
 
+=over 4
 
-=head2 DESTROY
+=item Examples
 
-We might need it later
+Examples of useful code with both POD and ideally a test case to show it
+working.
 
-=cut
+=back
 
-sub DESTROY {
-    return;
-}
+=head1 AUTHOR
 
-=head2 AUTOLOAD
+John Napiorkowski, C<< <jjnapiork@cpan.org> >>
 
-Delegate to the decorator targe
-
-=cut
-
-sub AUTOLOAD {
-    
-    my ($self, @args) = @_;
-    my ($method) = (our $AUTOLOAD =~ /([^:]+)$/);
-    
-    ## We delegate with this method in an attempt to support a value of
-    ## __type_constraint which is also AUTOLOADing, in particular the class
-    ## MooseX::Types::UndefinedType which AUTOLOADs during autovivication.
-    
-    my $return;
-    
-    eval {
-        $return = $self->__internal_type_constraint->$method(@args);
-    }; if($@) {
-        croak $@;
-    } else {
-        return $return;
-    }
-}
-
-=head1 AUTHOR AND COPYRIGHT
-
-John Napiorkowski (jnapiorkowski) <jjnapiork@cpan.org>
-
-=head1 LICENSE
+=head1 COPYRIGHT & LICENSE
 
 This program is free software; you can redistribute it and/or modify
-it under the same terms as perl itself.
+it under the same terms as Perl itself.
 
 =cut
-
+	
 1;
-
