@@ -31,7 +31,6 @@ has 'dependent_type_constraint' => (
     is=>'ro',
     isa=>'Object',
     predicate=>'has_dependent_type_constraint',
-    required=>1,
     handles=>{
         check_dependent=>'check',  
     },
@@ -48,7 +47,6 @@ has 'constraining_type_constraint' => (
     is=>'ro',
     isa=>'Object',
     predicate=>'has_constraining_type_constraint',
-    required=>1,
     handles=>{
         check_constraining=>'check',  
     },
@@ -71,7 +69,6 @@ has 'comparison_callback' => (
     is=>'ro',
     isa=>'CodeRef',
     predicate=>'has_comparison_callback',
-    required=>1,
 );
 
 =head2 constraint_generator
@@ -107,17 +104,6 @@ around 'new' => sub {
     return $self;
 };
 
-=head2 check($check_value, $constraining_value)
-
-Make sure when properly dispatch all the right values to the right spots
-
-=cut
-
-around 'check' => sub {
-    my ($check, $self, @args) = @_;
-    return $self->$check(@args);
-};
-
 =head2 generate_constraint_for ($type_constraints)
 
 Given some type constraints, use them to generate validation rules for an ref
@@ -126,25 +112,25 @@ of values (to be passed at check time)
 =cut
 
 sub generate_constraint_for {
-    my ($self, $callback, $constraining) = @_;
+    my ($self, $callback) = @_;
     return sub {   
         my ($dependent_pair) = @_;
-        my ($check_value, $constraining_value) = @$dependent_pair;
+        my ($dependent, $constraining) = @$dependent_pair;
         
         ## First need to test the bits
-        unless($self->check_dependent($check_value)) {
+        unless($self->check_dependent($dependent)) {
             return;
         }
     
-        unless($self->check_constraining($constraining_value)) {
+        unless($self->check_constraining($constraining)) {
             return;
         }
     
         my $constraint_generator = $self->constraint_generator;
         return $constraint_generator->(
+            $dependent,
             $callback,
-            $check_value,
-            $constraining_value,
+            $constraining,
         );
     };
 }
@@ -156,18 +142,18 @@ Given a ref of type constraints, create a structured type.
 =cut
 
 sub parameterize {
-    my ($self, $dependent, $callback, $constraining) = @_;
+    my ($self, $dependent_tc, $callback, $constraining_tc) = @_;
     my $class = ref $self;
-    my $name = $self->_generate_subtype_name($dependent,  $callback, $constraining);
+    my $name = $self->_generate_subtype_name($dependent_tc,  $callback, $constraining_tc);
     my $constraint_generator = $self->__infer_constraint_generator;
 
     return $class->new(
         name => $name,
         parent => $self,
-        dependent_type_constraint=>$dependent,
+        dependent_type_constraint=>$dependent_tc,
         comparison_callback=>$callback,
         constraint_generator => $constraint_generator,
-        constraining_type_constraint => $constraining,
+        constraining_type_constraint => $constraining_tc,
     );
 }
 
@@ -178,10 +164,10 @@ Returns a name for the dependent type that should be unique
 =cut
 
 sub _generate_subtype_name {
-    my ($self, $dependent, $callback, $constraining) = @_;
+    my ($self, $dependent_tc, $callback, $constraining_tc) = @_;
     return sprintf(
         "%s_depends_on_%s_via_%s",
-        $dependent, $constraining, $callback
+        $dependent_tc, $constraining_tc, $callback,
     );
 }
 
@@ -199,6 +185,7 @@ sub __infer_constraint_generator {
     if($self->has_constraint_generator) {
         return $self->constraint_generator;
     } else {
+        warn "I'm doing the questioning infer generator thing";
         return sub {
             ## I'm not sure about this stuff but everything seems to work
             my $tc = shift @_;
@@ -226,7 +213,6 @@ around 'compile_type_constraint' => sub {
         $self->has_constraining_type_constraint) {
         my $generated_constraint = $self->generate_constraint_for(
             $self->comparison_callback,
-             $self->constraining_type_constraint,
         );
         $self->_set_constraint($generated_constraint);       
     }
@@ -237,6 +223,8 @@ around 'compile_type_constraint' => sub {
 =head2 create_child_type
 
 modifier to make sure we get the constraint_generator
+
+=cut
 
 around 'create_child_type' => sub {
     my ($create_child_type, $self, %opts) = @_;

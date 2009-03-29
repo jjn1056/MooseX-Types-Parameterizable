@@ -9,6 +9,7 @@ license 'perl';
 
 ## Module dependencies
 requires 'Moose' => '0.73';
+requires 'MooseX::Types' => '.10';
 requires 'Scalar::Util' => '1.19';
 
 ## Testing dependencies

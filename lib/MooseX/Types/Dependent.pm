@@ -15,37 +15,19 @@ MooseX::Types::Dependent - L<MooseX::Types> constraints that depend on values.
 
 =head1 SYNOPSIS
 
-        TDB:  Syntax to be determined.  Canonical is:
-        
-        subtype UniqueInt,
-          as Depending[
-            Int,
-            sub {
-              shift->exists(shift) ? 0:1;
-            },
-            Set,
-          ];
-          
-        possible sugar options
-        
-        as Depending {
-                shift->exists(shift) ? 0:1;        
-        } [Int, Set];
-        
-        May have some ready to go, such as
-        as isGreaterThan[
-                Int,
-                Int,
-        ];
-        
-        as isMemberOf[
-                Int
-                Set,
-        ]
-        
-        ## using object for comparison
-        
-        as Dependent[Int, CompareCmd, Int];
+    subtype UniqueInt,
+      as Depending[
+        Int,
+        sub {
+          shift->exists(shift) ? 0:1;
+        },
+        Set,
+      ];
+
+    subtype UniqueInt,
+      as Depending {
+        shift->exists(shift) ? 0:1;        
+      } [Int, Set];
 
 Please see the test cases for more examples.
 
@@ -72,12 +54,12 @@ comparision operator between the check value and the constraining value
 
 =head2 Subtyping a Dependent type constraints
 
-        TDB: Need discussion and examples.
+TDB: Need discussion and examples.
 
 =head2 Coercions
 
-        TBD: Need discussion and example of coercions working for both the
-        constrainted and dependent type constraint.
+TBD: Need discussion and example of coercions working for both the
+constrainted and dependent type constraint.
 
 =head2 Recursion
 
@@ -86,8 +68,6 @@ you can include a type constraint as a contained type constraint of itself.
 Recursion is support in both the dependent and constraining type constraint. For
 example:
 
-        TBD
-
 =head1 TYPE CONSTRAINTS
 
 This type library defines the following constraints.
@@ -95,7 +75,7 @@ This type library defines the following constraints.
 =head2 Depending[$dependent_tc, $codref, $constraining_tc]
 
 Create a subtype of $dependent_tc that is constrainted by a value that is a
-valid $constraining_tc using $coderef.  For example;
+valid $constraining_tc using $coderef.  For example:
 
     subtype GreaterThanInt,
       as Depending[
@@ -107,34 +87,37 @@ valid $constraining_tc using $coderef.  For example;
         Int,
       ];
 
+Note that the coderef is passed the constraining value and the check value as an
+Array NOT an ArrayRef.
+
 This would create a type constraint that takes an integer and checks it against
 a second integer, requiring that the check value is greater.  For example:
 
-        GreaterThanInt->check(5,10);  ## Fails, 5 is less than 10
-        GreaterThanInt->check('a',10); ## Fails, 'a' is not an Int.
-        GreaterThanInt->check(5,'b'); ## Fails, 'b' is not an Int either.
-        GreaterThanInt->check(10,5); ## Success, 10 is greater than 5.
+    GreaterThanInt->check([5,10]);  ## Fails, 5 is less than 10
+    GreaterThanInt->check(['a',10]); ## Fails, 'a' is not an Int.
+    GreaterThanInt->check([5,'b']); ## Fails, 'b' is not an Int either.
+    GreaterThanInt->check([10,5]); ## Success, 10 is greater than 5.
 
 =head1 EXAMPLES
 
 Here are some additional example usage for structured types.  All examples can
 be found also in the 't/examples.t' test.  Your contributions are also welcomed.
 
-        TBD
+TBD
 
 =cut
 
 Moose::Util::TypeConstraints::get_type_constraint_registry->add_type_constraint(
-	MooseX::Meta::TypeConstraint::Dependent->new(
-		name => "MooseX::Types::Dependent::Depending" ,
-		parent => find_type_constraint('ArrayRef'),
-		constraint_generator=> sub { 
-                my ($callback, $constraining_value, $check_value) = @_;
-                return $callback->($constraining_value, $check_value) ? 1:0;
-		},
-	)
+    MooseX::Meta::TypeConstraint::Dependent->new(
+        name => "MooseX::Types::Dependent::Depending" ,
+        parent => find_type_constraint('ArrayRef'),
+        constraint_generator=> sub { 
+			my ($dependent_val, $callback, $constraining_val) = @_;
+			return $callback->($dependent_val, $constraining_val);
+        },
+    )
 );
-	
+
 =head1 SEE ALSO
 
 The following modules or resources may be of interest.
@@ -165,5 +148,5 @@ This program is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
 
 =cut
-	
+
 1;

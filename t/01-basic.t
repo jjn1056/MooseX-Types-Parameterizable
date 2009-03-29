@@ -18,14 +18,13 @@ use Test::More tests=>9; {
 		parent => find_type_constraint('ArrayRef'),
 		dependent_type_constraint=>$int,
 		comparison_callback=>sub {
-			my ($constraining_value, $check_value) = @_;
-			return $check_value > $constraining_value ? 0:1;
+			my ($dependent_val, $constraining_val) = @_;
+			return ($dependent_val > $constraining_val) ? 1:undef;
 		},
 		constraining_type_constraint =>$int,
 		constraint_generator=> sub {
-			## Because "shift->(shift,shift)" is not very clear, is it :)
-			my ($callback, $constraining_value, $check_value) = @_;
-			return $callback->($constraining_value, $check_value);
+			my ($dependent_val, $callback, $constraining_val) = @_;
+			return $callback->($dependent_val, $constraining_val);
 		},
 	);
 
