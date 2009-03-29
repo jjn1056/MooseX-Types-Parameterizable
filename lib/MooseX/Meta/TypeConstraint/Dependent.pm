@@ -114,17 +114,8 @@ Make sure when properly dispatch all the right values to the right spots
 =cut
 
 around 'check' => sub {
-    my ($check, $self, $check_value, $constraining_value) = @_;
-    
-    unless($self->check_dependent($check_value)) {
-        return;
-    }
-
-    unless($self->check_constraining($constraining_value)) {
-        return;
-    }
-
-    return $self->$check($check_value, $constraining_value);
+    my ($check, $self, @args) = @_;
+    return $self->$check(@args);
 };
 
 =head2 generate_constraint_for ($type_constraints)
@@ -137,7 +128,18 @@ of values (to be passed at check time)
 sub generate_constraint_for {
     my ($self, $callback, $constraining) = @_;
     return sub {   
-        my ($check_value, $constraining_value) = @_;
+        my ($dependent_pair) = @_;
+        my ($check_value, $constraining_value) = @$dependent_pair;
+        
+        ## First need to test the bits
+        unless($self->check_dependent($check_value)) {
+            return;
+        }
+    
+        unless($self->check_constraining($constraining_value)) {
+            return;
+        }
+    
         my $constraint_generator = $self->constraint_generator;
         return $constraint_generator->(
             $callback,
