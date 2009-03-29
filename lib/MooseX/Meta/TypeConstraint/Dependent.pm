@@ -29,7 +29,12 @@ L</constraining_type_constraint>
 
 has 'dependent_type_constraint' => (
     is=>'ro',
+    isa=>'Object',
     predicate=>'has_dependent_type_constraint',
+    required=>1,
+    handles=>{
+        check_dependent=>'check',  
+    },
 );
 
 =head2 constraining_type_constraint
@@ -41,10 +46,15 @@ constraining value of the depending type.
 
 has 'constraining_type_constraint' => (
     is=>'ro',
+    isa=>'Object',
     predicate=>'has_constraining_type_constraint',
+    required=>1,
+    handles=>{
+        check_constraining=>'check',  
+    },
 );
 
-=head2 comparision_callback
+=head2 comparison_callback
 
 This is a callback which returns a boolean value.  It get's passed the value
 L</constraining_type_constraint> validates as well as the check value.
@@ -57,10 +67,11 @@ not as a sneaky way to mess with the constraining value.
 
 =cut
 
-has 'comparision_callback' => (
+has 'comparison_callback' => (
     is=>'ro',
     isa=>'CodeRef',
-    predicate=>'has_comparision_callback',
+    predicate=>'has_comparison_callback',
+    required=>1,
 );
 
 =head2 constraint_generator
@@ -74,6 +85,7 @@ has 'constraint_generator' => (
     is=>'ro',
     isa=>'CodeRef',
     predicate=>'has_constraint_generator',
+    required=>1,
 );
 
 =head1 METHODS
@@ -89,10 +101,30 @@ Initialization stuff.
 around 'new' => sub {
     my ($new, $class, @args)  = @_;
     my $self = $class->$new(@args);
-    $self->coercion(MooseX::Meta::TypeCoercion::Structured->new(
+    $self->coercion(MooseX::Meta::TypeCoercion::Dependent->new(
         type_constraint => $self,
     ));
     return $self;
+};
+
+=head2 check($check_value, $constraining_value)
+
+Make sure when properly dispatch all the right values to the right spots
+
+=cut
+
+around 'check' => sub {
+    my ($check, $self, $check_value, $constraining_value) = @_;
+    
+    unless($self->check_dependent($check_value)) {
+        return;
+    }
+
+    unless($self->check_constraining($constraining_value)) {
+        return;
+    }
+
+    return $self->$check($check_value, $constraining_value);
 };
 
 =head2 generate_constraint_for ($type_constraints)
@@ -103,33 +135,37 @@ of values (to be passed at check time)
 =cut
 
 sub generate_constraint_for {
-    my ($self, $dependent, $callback, $constraining) = @_;
-    return sub {
-        my (@args) = @_;
+    my ($self, $callback, $constraining) = @_;
+    return sub {   
+        my ($check_value, $constraining_value) = @_;
         my $constraint_generator = $self->constraint_generator;
-        return $constraint_generator->($dependent, $callback, $constraining, @args);
+        return $constraint_generator->(
+            $callback,
+            $check_value,
+            $constraining_value,
+        );
     };
 }
 
-=head2 parameterize (@type_constraints)
+=head2 parameterize ($dependent, $callback, $constraining)
 
 Given a ref of type constraints, create a structured type.
 
 =cut
 
 sub parameterize {
-    
     my ($self, $dependent, $callback, $constraining) = @_;
     my $class = ref $self;
-    my $name = $self->_generate_subtype_name($dependent, $constraining);
+    my $name = $self->_generate_subtype_name($dependent,  $callback, $constraining);
     my $constraint_generator = $self->__infer_constraint_generator;
 
     return $class->new(
         name => $name,
         parent => $self,
         dependent_type_constraint=>$dependent,
-        comparision_callback=>$callback,
+        comparison_callback=>$callback,
         constraint_generator => $constraint_generator,
+        constraining_type_constraint => $constraining,
     );
 }
 
@@ -140,10 +176,10 @@ Returns a name for the dependent type that should be unique
 =cut
 
 sub _generate_subtype_name {
-    my ($self, $dependent, $constraining) = @_;
+    my ($self, $dependent, $callback, $constraining) = @_;
     return sprintf(
-        "%s_depends_on_%s",
-        $dependent, $constraining
+        "%s_depends_on_%s_via_%s",
+        $dependent, $constraining, $callback
     );
 }
 
@@ -166,8 +202,7 @@ sub __infer_constraint_generator {
             my $tc = shift @_;
             my $merged_tc = [
                 @$tc,
-                $self->dependent_type_constraint,
-                $self->comparision_callback,
+                $self->comparison_callback,
                 $self->constraining_type_constraint,
             ];
             
@@ -183,22 +218,23 @@ hook into compile_type_constraint so we can set the correct validation rules.
 =cut
 
 around 'compile_type_constraint' => sub {
-    my ($compile_type_constraint, $self, @args) = @_;
+    my ($compile_type_constraint, $self) = @_;
     
-    if($self->has_type_constraints) {
-        my $type_constraints = $self->type_constraints;
-        my $constraint = $self->generate_constraint_for($type_constraints);
-        $self->_set_constraint($constraint);        
+    if($self->has_comparison_callback &&
+        $self->has_constraining_type_constraint) {
+        my $generated_constraint = $self->generate_constraint_for(
+            $self->comparison_callback,
+             $self->constraining_type_constraint,
+        );
+        $self->_set_constraint($generated_constraint);       
     }
 
-    return $self->$compile_type_constraint(@args);
+    return $self->$compile_type_constraint;
 };
 
 =head2 create_child_type
 
 modifier to make sure we get the constraint_generator
-
-=cut
 
 around 'create_child_type' => sub {
     my ($create_child_type, $self, %opts) = @_;
