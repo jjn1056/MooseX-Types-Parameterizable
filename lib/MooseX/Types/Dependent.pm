@@ -21,16 +21,16 @@ MooseX::Types::Dependent - L<MooseX::Types> constraints that depend on values.
           as Depending[
             Int,
             sub {
-              shift->not_exists(shift);
+              shift->exists(shift) ? 0:1;
             },
             Set,
           ];
           
         possible sugar options
         
-        Depending 
-        as Depending sub :Set {} Int;
-        depending(Set $set) { $set->exists($Int) } Int;
+        as Depending {
+                shift->exists(shift) ? 0:1;        
+        } [Int, Set];
         
         May have some ready to go, such as
         as isGreaterThan[
