@@ -44,8 +44,6 @@ use Test::More tests=>22; {
         Int,
         sub {
             my ($dependent_int, $constraining_arrayref) = @_;
-            ## Yes, this is braindead way to check for uniques in an array
-            ## but this doesn't require additional dependencies.
             (grep { $_ == $dependent_int} @$constraining_arrayref) ? 0:1
         },
         ArrayRef[Int],
@@ -63,8 +61,6 @@ use Test::More tests=>22; {
     subtype UniqueInt2,
 	  as depending {
             my ($dependent_int, $constraining_arrayref) = @_;
-            ## Yes, this is braindead way to check for uniques in an array
-            ## but this doesn't require additional dependencies.
             (grep { $_ == $dependent_int} @$constraining_arrayref) ? 0:1		
 	  } Int, ArrayRef[Int];
 
