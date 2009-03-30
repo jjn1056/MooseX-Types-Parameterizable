@@ -1,4 +1,4 @@
-use Test::More tests=>23; {
+use Test::More tests=>24; {
     
     use strict;
     use warnings;
@@ -51,17 +51,22 @@ use Test::More tests=>23; {
             (grep { $_ == $dependent_int} @$constraining_arrayref) ? undef:1
         },
         ArrayRef[Int],
-      ];
+      ],
+	  where {
+		my ($dependent_val, $constraining_value) = @$_;
+		return $dependent_val > 2 ? 1:undef;
+	  };
       
     isa_ok UniqueInt, 'MooseX::Meta::TypeConstraint::Dependent';
     ok !UniqueInt->check(['a',[1,2,3]]), '"a" not an Int';
     ok !UniqueInt->check([1,['b','c']]), '"b","c" not an arrayref';    
     ok !UniqueInt->check([1,[1,2,3]]), 'not unique in set';
     ok !UniqueInt->check([10,[1,10,15]]), 'not unique in set';
-    ok UniqueInt->check([2,[3..6]]), 'PASS unique in set';
+    ok !UniqueInt->check([2,[3..6]]), 'FAIL dependent is too small';
     ok UniqueInt->check([3,[100..110]]), 'PASS unique in set';
+    ok UniqueInt->check([4,[100..110]]), 'PASS unique in set';	
 	
-	## Same as above, with sugar
+	## Basically as above, with sugar
     subtype UniqueInt2,
 	  as depending {
             my ($dependent_int, $constraining_arrayref) = @_;
