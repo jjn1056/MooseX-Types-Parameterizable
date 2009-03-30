@@ -1,4 +1,4 @@
-use Test::More tests=>15; {
+use Test::More tests=>22; {
     
     use strict;
     use warnings;
@@ -9,7 +9,14 @@ use Test::More tests=>15; {
 	use MooseX::Types -declare => [qw(
         IntGreaterThanInt
         UniqueInt
+		UniqueInt2
     )];
+	
+	## sugar for alternative syntax: depending {} TC,TC
+	sub depending(&$$) {
+		my ($coderef, $dependent_tc, $constraining_tc) = @_;
+		return Depending[$dependent_tc,$coderef,$constraining_tc];
+	}
     
     ## The dependent value must exceed the constraining value
     subtype IntGreaterThanInt,
@@ -50,5 +57,22 @@ use Test::More tests=>15; {
     ok !UniqueInt->check([1,[1,2,3]]), 'not unique in set';
     ok !UniqueInt->check([10,[1,10,15]]), 'not unique in set';
     ok UniqueInt->check([2,[3..6]]), 'PASS unique in set';
-    ok UniqueInt->check([3,[100..110]]), 'PASS unique in set';    
+    ok UniqueInt->check([3,[100..110]]), 'PASS unique in set';
+	
+	## Same as above, with suger
+    subtype UniqueInt2,
+	  as depending {
+            my ($dependent_int, $constraining_arrayref) = @_;
+            ## Yes, this is braindead way to check for uniques in an array
+            ## but this doesn't require additional dependencies.
+            (grep { $_ == $dependent_int} @$constraining_arrayref) ? 0:1		
+	  } Int, ArrayRef[Int];
+
+    isa_ok UniqueInt2, 'MooseX::Meta::TypeConstraint::Dependent';
+    ok !UniqueInt2->check(['a',[1,2,3]]), '"a" not an Int';
+    ok !UniqueInt2->check([1,['b','c']]), '"b","c" not an arrayref';    
+    ok !UniqueInt2->check([1,[1,2,3]]), 'not unique in set';
+    ok !UniqueInt2->check([10,[1,10,15]]), 'not unique in set';
+    ok UniqueInt2->check([2,[3..6]]), 'PASS unique in set';
+    ok UniqueInt2->check([3,[100..110]]), 'PASS unique in set';	
 }
