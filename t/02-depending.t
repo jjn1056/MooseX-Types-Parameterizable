@@ -16,8 +16,8 @@ use Test::More tests=>15; {
       as Depending[
         Int,
         sub {
-			my ($dependent_val, $constraining_val) = @_;
-			return ($dependent_val > $constraining_val) ? 1:undef;
+            my ($dependent_val, $constraining_val) = @_;
+            return ($dependent_val > $constraining_val) ? 1:undef;
         },
         Int,
       ];

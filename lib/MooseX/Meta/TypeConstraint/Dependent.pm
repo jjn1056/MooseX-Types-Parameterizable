@@ -63,6 +63,9 @@ However, the 'where' clause only get's the check value.
 Exercise some sanity, this should be limited to actual comparision operations,
 not as a sneaky way to mess with the constraining value.
 
+This should return a Bool, suitable for ->check (That is true for valid, false
+for fail).
+
 =cut
 
 has 'comparison_callback' => (
