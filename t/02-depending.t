@@ -42,7 +42,8 @@ use Test::More tests=>24; {
 	ok IntGreaterThanInt->check([12,1]), "Success, 12 is greater than1.";
 	ok IntGreaterThanInt->check([0,-10]), "Success, 0 is greater than -10.";
     
-    ## The dependent value cannot exist in the constraining arrayref
+    ## The dependent value cannot exist in the constraining arrayref.  Also, it
+	## (the dependent type) must exceed 2.
     subtype UniqueInt,
       as Depending[
         Int,
@@ -66,7 +67,7 @@ use Test::More tests=>24; {
     ok UniqueInt->check([3,[100..110]]), 'PASS unique in set';
     ok UniqueInt->check([4,[100..110]]), 'PASS unique in set';	
 	
-	## Basically as above, with sugar
+	## Basically as above, with sugar.
     subtype UniqueInt2,
 	  as depending {
             my ($dependent_int, $constraining_arrayref) = @_;
