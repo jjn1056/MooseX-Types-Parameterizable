@@ -61,7 +61,7 @@ use Test::More tests=>23; {
     ok UniqueInt->check([2,[3..6]]), 'PASS unique in set';
     ok UniqueInt->check([3,[100..110]]), 'PASS unique in set';
 	
-	## Same as above, with suger
+	## Same as above, with sugar
     subtype UniqueInt2,
 	  as depending {
             my ($dependent_int, $constraining_arrayref) = @_;

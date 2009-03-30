@@ -241,11 +241,13 @@ around 'create_child_type' => sub {
 
 We modify constraint so that the value pass is automatically dereferenced
 
+=cut
+
 around 'constraint' => sub {
     my ($constraint, $self) = @_;
     return sub {
         my ($arg) = @_;
-        $self->$constraint->(@$arg);
+        $self->$constraint->($arg);
     };
 };
 
