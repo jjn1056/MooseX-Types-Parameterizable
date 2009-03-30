@@ -237,6 +237,18 @@ around 'create_child_type' => sub {
     );
 };
 
+=head2 constraint
+
+We modify constraint so that the value pass is automatically dereferenced
+
+around 'constraint' => sub {
+    my ($constraint, $self) = @_;
+    return sub {
+        my ($arg) = @_;
+        $self->$constraint->(@$arg);
+    };
+};
+
 =head2 is_a_type_of
 
 =head2 is_subtype_of
