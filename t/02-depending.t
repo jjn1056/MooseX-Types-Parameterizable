@@ -44,7 +44,7 @@ use Test::More tests=>22; {
         Int,
         sub {
             my ($dependent_int, $constraining_arrayref) = @_;
-            (grep { $_ == $dependent_int} @$constraining_arrayref) ? 0:1
+            (grep { $_ == $dependent_int} @$constraining_arrayref) ? undef:1
         },
         ArrayRef[Int],
       ];
@@ -61,8 +61,12 @@ use Test::More tests=>22; {
     subtype UniqueInt2,
 	  as depending {
             my ($dependent_int, $constraining_arrayref) = @_;
-            (grep { $_ == $dependent_int} @$constraining_arrayref) ? 0:1		
-	  } Int, ArrayRef[Int];
+            (grep { $_ == $dependent_int} @$constraining_arrayref) ? undef:1		
+	  } Int, ArrayRef[Int],
+	  where {
+		use Data::Dump qw/dump/;
+		warn dump @_;
+	  }
 
     isa_ok UniqueInt2, 'MooseX::Meta::TypeConstraint::Dependent';
     ok !UniqueInt2->check(['a',[1,2,3]]), '"a" not an Int';
