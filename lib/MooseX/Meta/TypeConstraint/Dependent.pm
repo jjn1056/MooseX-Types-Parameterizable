@@ -112,12 +112,12 @@ around 'new' => sub {
 
 =head2 validate
 
-We intercept validate in order to custom process the message
+We intercept validate in order to custom process the message.
 
 =cut
 
-around 'validate' => sub {
-    my ($validate, $self, @args) = @_;
+override 'validate' => sub {
+    my ($self, @args) = @_;
     my $compiled_type_constraint = $self->_compiled_type_constraint;
     my $message = bless {message=>undef}, 'MooseX::Types::Dependent::Message';
     my $result = $compiled_type_constraint->(@args, $message);
