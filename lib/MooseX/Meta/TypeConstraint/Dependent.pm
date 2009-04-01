@@ -32,7 +32,8 @@ has 'dependent_type_constraint' => (
     isa=>'Object',
     predicate=>'has_dependent_type_constraint',
     handles=>{
-        check_dependent=>'check',  
+        check_dependent=>'check',
+        get_message_dependent=>'get_message',
     },
 );
 
@@ -107,6 +108,35 @@ around 'new' => sub {
     return $self;
 };
 
+=head2 validate
+
+We intercept validate in order to custom process the message
+
+
+=cut
+
+around 'check' => sub {
+    my ($check, $self, @args) = @_;
+    my ($result, $message) = $self->_compiled_type_constraint->(@args);
+    warn $result;
+    return $result;
+};
+
+around 'validate' => sub {
+    my ($validate, $self, @args) = @_;
+    my ($result, $message) = $self->_compiled_type_constraint->(@args);
+    
+    if($result) {
+        return $result;
+    } else {
+        if(defined $message) {
+            return "Inner: $message";
+        } else { warn '......................';
+            return $self->get_message(@args);
+        }
+    }
+};
+
 =head2 generate_constraint_for ($type_constraints)
 
 Given some type constraints, use them to generate validation rules for an ref
@@ -117,12 +147,12 @@ of values (to be passed at check time)
 sub generate_constraint_for {
     my ($self, $callback) = @_;
     return sub {   
-        my ($dependent_pair) = @_;
+        my $dependent_pair = shift @_;
         my ($dependent, $constraining) = @$dependent_pair;
         
         ## First need to test the bits
         unless($self->check_dependent($dependent)) {
-            return;
+            return (undef, 'bbbbbb');
         }
     
         unless($self->check_constraining($constraining)) {

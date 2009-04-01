@@ -85,5 +85,9 @@ use Test::More tests=>24; {
     ok !UniqueInt2->check([10,[1,10,15]]), 'not unique in set';
     ok !UniqueInt2->check([2,[3..6]]), 'FAIL dependent is too small';
     ok UniqueInt2->check([3,[100..110]]), 'PASS unique in set';
-    ok UniqueInt2->check([4,[100..110]]), 'PASS unique in set';	
+    ok UniqueInt2->check([4,[100..110]]), 'PASS unique in set';
+
+	## Basic error messages.  TODO should be it's own test
+	
+	warn UniqueInt2->validate(['a',[1,2,3]]);
 }
