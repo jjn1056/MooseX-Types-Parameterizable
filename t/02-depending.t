@@ -1,9 +1,8 @@
-use Test::More tests=>24; {
+use Test::More tests=>29; {
     
     use strict;
     use warnings;
-    
-    use Test::Exception;
+
     use MooseX::Types::Dependent qw(Depending);
  	use MooseX::Types::Moose qw(Int Str Object ArrayRef HashRef Maybe);
 	use MooseX::Types -declare => [qw(
@@ -57,7 +56,8 @@ use Test::More tests=>24; {
 		my ($dependent_val, $constraining_value) = @$_;
 		return $dependent_val > 2 ? 1:undef;
 	  };
-      
+	  #message {"Custom Error: $_"};
+
     isa_ok UniqueInt, 'MooseX::Meta::TypeConstraint::Dependent';
     ok !UniqueInt->check(['a',[1,2,3]]), '"a" not an Int';
     ok !UniqueInt->check([1,['b','c']]), '"b","c" not an arrayref';    
@@ -88,6 +88,18 @@ use Test::More tests=>24; {
     ok UniqueInt2->check([4,[100..110]]), 'PASS unique in set';
 
 	## Basic error messages.  TODO should be it's own test
+	like UniqueInt->validate(['a',[1,2,3]]), qr/failed for 'Int' failed with value a/,
+	  "a is not an Int";
 	
-	warn UniqueInt2->validate(['a',[1,2,3]]);
+	like UniqueInt->validate([1,['b','c']]), qr/failed for 'ArrayRef\[Int\]'/,
+	  "ArrayRef doesn't contain Ints";
+	
+	like UniqueInt->validate([1,[1,2,3]]), qr/failed with value \[ 1, \[ 1, 2, 3 \] \]/,
+	  "Is not unique in the constraint";
+	
+    like UniqueInt->validate([10,[1,10,15]]), qr/failed with value \[ 10, \[ 1, 10, 15 \] \]/,
+	  "Expected Error message for [10,[1,10,15]]";
+	
+    like UniqueInt->validate([2,[3..6]]), qr/failed with value \[ 2, \[ 3, 4, 5, 6 \] \]/,
+	  "Expected Error message for [2,[3..6]]";
 }

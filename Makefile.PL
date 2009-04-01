@@ -11,6 +11,7 @@ license 'perl';
 requires 'Moose' => '0.73';
 requires 'MooseX::Types' => '0.10';
 requires 'Scalar::Util' => '1.19';
+requires 'Devel::PartialDump' => '0.07';
 
 ## Testing dependencies
 build_requires 'Test::More' => '0.70';

@@ -4,6 +4,7 @@ package ## Hide from PAUSE
 use Moose;
 use Moose::Util::TypeConstraints ();
 use MooseX::Meta::TypeCoercion::Dependent;
+use Devel::PartialDump;
 extends 'Moose::Meta::TypeConstraint';
 
 =head1 NAME
@@ -49,7 +50,8 @@ has 'constraining_type_constraint' => (
     isa=>'Object',
     predicate=>'has_constraining_type_constraint',
     handles=>{
-        check_constraining=>'check',  
+        check_constraining=>'check',
+        get_message_constraining=>'get_message',
     },
 );
 
@@ -112,27 +114,22 @@ around 'new' => sub {
 
 We intercept validate in order to custom process the message
 
-
 =cut
-
-around 'check' => sub {
-    my ($check, $self, @args) = @_;
-    my ($result, $message) = $self->_compiled_type_constraint->(@args);
-    warn $result;
-    return $result;
-};
 
 around 'validate' => sub {
     my ($validate, $self, @args) = @_;
-    my ($result, $message) = $self->_compiled_type_constraint->(@args);
-    
+    my $compiled_type_constraint = $self->_compiled_type_constraint;
+    my $message = bless {message=>undef}, 'MooseX::Types::Dependent::Message';
+    my $result = $compiled_type_constraint->(@args, $message);
+
     if($result) {
         return $result;
     } else {
-        if(defined $message) {
-            return "Inner: $message";
-        } else { warn '......................';
-            return $self->get_message(@args);
+        my $args = Devel::PartialDump::dump(@args);
+        if(my $message = $message->{message}) {
+            return $self->get_message("$args, Internal Validation Error is: $message");
+        } else {
+            return $self->get_message($args);
         }
     }
 };
@@ -152,10 +149,14 @@ sub generate_constraint_for {
         
         ## First need to test the bits
         unless($self->check_dependent($dependent)) {
-            return (undef, 'bbbbbb');
+            $_[0]->{message} = $self->get_message_dependent($dependent)
+             if $_[0];
+            return;
         }
     
         unless($self->check_constraining($constraining)) {
+            $_[0]->{message} = $self->get_message_constraining($constraining)
+             if $_[0];
             return;
         }
     
@@ -209,7 +210,10 @@ sub _generate_subtype_name {
 This returns a CODEREF which generates a suitable constraint generator.  Not
 user servicable, you'll never call this directly.
 
-    TBD, this is definitely going to need some work.
+    TBD, this is definitely going to need some work.  Cargo culted from some
+    code I saw in Moose::Meta::TypeConstraint::Parameterized or similar.  I
+    Don't think I need this, since Dependent types require parameters, so
+    will always have a constrain generator.
 
 =cut
 
@@ -218,7 +222,7 @@ sub __infer_constraint_generator {
     if($self->has_constraint_generator) {
         return $self->constraint_generator;
     } else {
-        warn "I'm doing the questioning infer generator thing";
+        warn "I'm doing the questionable infer generator thing";
         return sub {
             ## I'm not sure about this stuff but everything seems to work
             my $tc = shift @_;
@@ -247,7 +251,7 @@ around 'compile_type_constraint' => sub {
         my $generated_constraint = $self->generate_constraint_for(
             $self->comparison_callback,
         );
-        $self->_set_constraint($generated_constraint);       
+        $self->_set_constraint($generated_constraint);
     }
 
     return $self->$compile_type_constraint;
@@ -322,17 +326,13 @@ sub type_constraints_equals {
 
 =head2 get_message
 
-Give you a better peek into what's causing the error.  For now we stringify the
-incoming deep value with L<Devel::PartialDump> and pass that on to either your
-custom error message or the default one.  In the future we'll try to provide a
-more complete stack trace of the actual offending elements
+Give you a better peek into what's causing the error.
 
-    TBD
+=cut
 
 around 'get_message' => sub {
     my ($get_message, $self, $value) = @_;
-    my $new_value = Devel::PartialDump::dump($value);
-    return $self->$get_message($new_value);
+    return $self->$get_message($value);
 };
 
 =head1 SEE ALSO
