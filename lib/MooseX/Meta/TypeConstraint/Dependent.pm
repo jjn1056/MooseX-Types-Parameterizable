@@ -271,57 +271,25 @@ around 'create_child_type' => sub {
     );
 };
 
-=head2 is_a_type_of
-
-=head2 is_subtype_of
-
 =head2 equals
 
 Override the base class behavior.
 
-    TBD
+=cut
 
 sub equals {
     my ( $self, $type_or_name ) = @_;
-    my $other = Moose::Util::TypeConstraints::find_type_constraint($type_or_name);
+    my $other = Moose::Util::TypeConstraints::find_type_constraint("$type_or_name");
 
-    return unless $other->isa(__PACKAGE__);
-    
     return (
-        $self->type_constraints_equals($other)
+        $other->isa(__PACKAGE__)
             and
-        $self->parent->equals( $other->parent )
+        $self->dependent_type_constraint->equals($other)
+            and
+        $self->constraining_type_constraint->equals($other)
+            and 
+        $self->parent->equals($other->parent)
     );
-}
-
-=head2 type_constraints_equals
-
-Checks to see if the internal type contraints are equal.
-
-    TBD
-
-sub type_constraints_equals {
-    my ($self, $other) = @_;
-    my @self_type_constraints = @{$self->type_constraints||[]};
-    my @other_type_constraints = @{$other->type_constraints||[]};
-    
-    ## Incoming ay be either arrayref or hashref, need top compare both
-    while(@self_type_constraints) {
-        my $self_type_constraint = shift @self_type_constraints;
-        my $other_type_constraint = shift @other_type_constraints
-         || return; ## $other needs the same number of children.
-        
-        if( ref $self_type_constraint) {
-            $self_type_constraint->equals($other_type_constraint)
-             || return; ## type constraints obviously need top be equal
-        } else {
-            $self_type_constraint eq $other_type_constraint
-             || return; ## strings should be equal
-        }
-
-    }
-    
-    return 1; ##If we get this far, everything is good.
 }
 
 =head2 get_message
