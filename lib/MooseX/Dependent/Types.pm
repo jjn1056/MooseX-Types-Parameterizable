@@ -1,115 +1,201 @@
-package MooseX::Types::Dependent;
+package MooseX::Dependent::Types;
 
 use 5.008;
 
 use Moose::Util::TypeConstraints;
-use MooseX::Meta::TypeConstraint::Dependent;
-use MooseX::Types -declare => [qw(Depending)];
+use MooseX::Dependent::Meta::TypeConstraint::Parameterizable;
+use MooseX::Types -declare => [qw(Dependent)];
 
 our $VERSION = '0.01';
 our $AUTHORITY = 'cpan:JJNAPIORK';
 
 =head1 NAME
 
-MooseX::Types::Dependent - L<MooseX::Types> constraints that depend on values.
+MooseX::Dependent::Types - L<MooseX::Types> constraints that depend on values.
 
 =head1 SYNOPSIS
 
-    subtype UniqueInt,
-      as Depending[
-        Int,
-        sub {
-          shift->exists(shift) ? 0:1;
-        },
-        Set,
-      ];
+Within your L<MooseX::Types> declared library module:
 
-    subtype UniqueInt,
-      as Depending {
-        shift->exists(shift) ? 0:1;        
-      } [Int, Set];
-
-Please see the test cases for more examples.
-
-=head1 DEFINITIONS
-
-The following is a list of terms used in this documentation.
-
-=head2 Dependent Type Constraint
-
-=head2 Check Value
-
-=head2 Constraining Type Constraint
-
-=head2 Constraining Value
+	use MooseX::Dependent::Types qw(Dependent);
+	
+	subtype UniqueID,
+		as Dependent[Int, Set],
+		where {
+			my ($int, $set) = @_;
+			return $set->find($int) ? 0:1;
+		};
 
 =head1 DESCRIPTION
 
-A dependent type is a type constraint whose validity is dependent on a second
-value.  You defined the dependent type constraint with a primary type constraint
-(such as 'Int') a 'constraining' value type constraint (such as a Set object)
-and a coderef which will compare the incoming value to be checked with a value
-that conforms to the constraining type constraint.  Typically there should be a
-comparision operator between the check value and the constraining value
+A L<MooseX::Types> library for creating dependent types.  A dependent type
+constraint for all intents and uses is a subclass of a parent type, but adds a
+secondary type parameter which is available to constraint callbacks (such as
+inside the 'where' clause) or in the coercions.
 
-=head2 Subtyping a Dependent type constraints
+This allows you to create a type that has additional runtime advice, such as a
+set of numbers within which another number must be unique, or allowable ranges
+for a integer, such as in:
 
-TDB: Need discussion and examples.
+	subtype Range,
+		as Dict[max=>Int, min=>Int],
+		where {
+			my ($range) = @_;
+			return $range->{max} > $range->{min};
+		};
 
+	subtype RangedInt,
+		as Dependent[Int, Range],
+		where {
+			my ($value, $range) = @_;
+			return ($value >= $range->{min} &&
+			 $value =< $range->{max});
+		};
+		
+	RangedInt[{min=>10,max=>100}]->check(50); ## OK
+	RangedInt[{min=>50, max=>75}]->check(99); ## Not OK, 99 exceeds max
+	RangedInt[{min=>99, max=>10}]->check(10); ## Not OK, not a valid Range!
+	
+Please note that for ArrayRef or HashRef dependent type constraints, as in the
+example above, as a convenience we automatically ref the incoming type
+parameters, so that the above could also be written as:
+
+	RangedInt[min=>10,max=>100]->check(50); ## OK
+	RangedInt[min=>50, max=>75]->check(99); ## Not OK, 99 exceeds max
+	RangedInt[min=>99, max=>10]->check(10); ## Not OK, not a valid Range!
+
+This is the preferred syntax, as it improve readability and adds to the
+conciseness of your type constraint declarations.  An exception wil be thrown if
+your type parameters don't match the required reference type.
+
+==head2 Subtyping a Dependent type constraints
+
+When subclassing a dependent type you must be careful to match either the
+required type parameter type constraint, or if re-parameterizing, the new
+type constraints are a subtype of the parent.  For example:
+
+	subtype RangedInt,
+		as Dependent[Int, Range],
+		where {
+			my ($value, $range) = @_;
+			return ($value >= $range->{min} &&
+			 $value =< $range->{max});
+		};
+
+Example subtype with additional constraints:
+
+	subtype PositiveRangedInt,
+		as RangedInt,
+		where {
+			shift >= 0;  			
+		};
+		
+Or you could have done the following instead (example of re-paramterizing)
+
+	## Subtype of Int for positive numbers
+	subtype PositiveInt,
+		as Int,
+		where {
+			shift >= 0;
+		};
+
+	## subtype Range to re-parameterize Range with subtypes
+	subtype PositveRange,
+		as Range[max=>PositiveInt, min=>PositiveInt];
+	
+	## create subtype via reparameterizing
+	subtype PositiveRangedInt,
+		as RangedInt[PositveRange];
+
+Notice how re-parameterizing the dependent type 'RangedInt' works slightly
+differently from re-parameterizing 'PositiveRange'?  Although it initially takes
+two type constraint values to declare a dependent type, should you wish to
+later re-parameterize it, you only use a subtype of the second type parameter
+(the dependent type constraint) since the first type constraint sets the parent
+type for the dependent type.  In other words, given the example above, a type
+constraint of 'RangedInt' would have a parent of 'Int', not 'Dependent' and for
+all intends and uses you could stick it wherever you'd need an Int.
+
+	subtype NameAge,
+		as Tuple[Str, Int];
+	
+	## re-parameterized subtypes of NameAge containing a Dependent Int	
+	subtype NameBetween18and35Age,
+		as NameAge[
+			Str,
+			PositiveRangedInt[min=>18,max=>35],
+		];
+
+One caveat is that you can't stick an unparameterized dependent type inside a
+structure, such as L<MooseX::Types::Structured> since that would require the
+ability to convert a 'containing' type constraint into a dependent type, which
+is a capacity we current don't have.
+	
 =head2 Coercions
 
-TBD: Need discussion and example of coercions working for both the
-constrainted and dependent type constraint.
+    TBD: Need discussion and example of coercions working for both the
+    constrainted and dependent type constraint.
+	
+	subtype OlderThanAge,
+		as Dependent[Int, Dict[older_than=>Int]],
+		where {
+			my ($value, $dict) = @_;
+			return $value > $dict->{older_than} ? 1:0;
+		};
+
+Which should work like:
+
+	OlderThanAge[{older_than=>25}]->check(39);  ## is OK
+		
+	coerce OlderThanAge,
+		from Tuple[Int, Int],
+		via {
+			my ($int, $int);
+			return [$int, {older_than=>$int}];
+		};
 
 =head2 Recursion
 
 Newer versions of L<MooseX::Types> support recursive type constraints.  That is
 you can include a type constraint as a contained type constraint of itself.
 Recursion is support in both the dependent and constraining type constraint. For
-example:
+example, if we assume an Object hierarchy like Food -> [Grass, Meat]
+	
+	TODO: DOES THIS EXAMPLE MAKE SENSE?
+	
+    subtype Food,
+		as Dependent[Food, Food],
+		where {
+			my ($value, $allowed_food_type) = @_;
+			return $value->isa($allowed_food_type);
+		};
+	
+	my $grass = Food::Grass->new;
+	my $meat = Food::Meat->new;
+	my $vegetarian = Food[$grass];
+	
+	$vegetarian->check($grass); ## Grass is the allowed food of a vegetarian
+	$vegetarian->check($meat); ## BANG, vegetarian can't eat meat!
 
 =head1 TYPE CONSTRAINTS
 
 This type library defines the following constraints.
 
-=head2 Depending[$dependent_tc, $codref, $constraining_tc]
+=head2 Dependent[ParentTypeConstraint, DependentValueTypeConstraint]
 
-Create a subtype of $dependent_tc that is constrainted by a value that is a
-valid $constraining_tc using $coderef.  For example:
+Create a subtype of ParentTypeConstraint with a dependency on a value that can
+pass the DependentValueTypeConstraint. If DependentValueTypeConstraint is empty
+we default to the 'Any' type constraint (see L<Moose::Util::TypeConstraints>).
 
-    subtype GreaterThanInt,
-      as Depending[
-        Int,
-        sub {
-          my($constraining_value, $check_value) = @_;
-          return $constraining_value > $check_value ? 1:0;
-        },
-        Int,
-      ];
-
-Note that the coderef is passed the constraining value and the check value as an
-Array NOT an ArrayRef.
-
-This would create a type constraint that takes an integer and checks it against
-a second integer, requiring that the check value is greater.  For example:
-
-    GreaterThanInt->check([5,10]);  ## Fails, 5 is less than 10
-    GreaterThanInt->check(['a',10]); ## Fails, 'a' is not an Int.
-    GreaterThanInt->check([5,'b']); ## Fails, 'b' is not an Int either.
-    GreaterThanInt->check([10,5]); ## Success, 10 is greater than 5.
-
-=head1 EXAMPLES
-
-Here are some additional example usage for structured types.  All examples can
-be found also in the 't/examples.t' test.  Your contributions are also welcomed.
-
-TBD
+This creates a type constraint which must be further parameterized at later time
+before it can be used to ->check or ->validate a value.  Attempting to do so
+will cause an exception.
 
 =cut
 
 Moose::Util::TypeConstraints::get_type_constraint_registry->add_type_constraint(
-    MooseX::Meta::TypeConstraint::Dependent->new(
-        name => "MooseX::Types::Dependent::Depending" ,
+    MooseX::Dependent::Meta::TypeConstraint::Parameterizable->new(
+        name => 'MooseX::Dependent::Types::Dependent',
         parent => find_type_constraint('ArrayRef'),
         constraint_generator=> sub { 
 			my ($dependent_val, $callback, $constraining_val) = @_;
@@ -117,26 +203,6 @@ Moose::Util::TypeConstraints::get_type_constraint_registry->add_type_constraint(
         },
     )
 );
-
-=head1 SEE ALSO
-
-The following modules or resources may be of interest.
-
-L<Moose>, L<MooseX::Types>, L<Moose::Meta::TypeConstraint>,
-L<MooseX::Meta::TypeConstraint::Dependent>
-
-=head1 TODO
-
-Here's a list of stuff I would be happy to get volunteers helping with:
-
-=over 4
-
-=item Examples
-
-Examples of useful code with both POD and ideally a test case to show it
-working.
-
-=back
 
 =head1 AUTHOR
 

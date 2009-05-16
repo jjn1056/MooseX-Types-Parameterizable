@@ -1,9 +1,9 @@
 use inc::Module::Install;
 
 ## All the required meta information
-name 'MooseX-Types-Dependent';
-all_from 'lib/MooseX/Types/Dependent.pm';
-abstract 'Moose Type Constraint for creating Dependent Types Constraints';
+name 'MooseX-Dependent';
+all_from 'lib/MooseX/Dependent.pm';
+abstract 'Moose extensions to let you use dependent types in your classes';
 author 'John Napiorkowski <jjnapiork@cpan.org>';
 license 'perl';
 
@@ -20,7 +20,7 @@ build_requires 'Test::Pod' => '1.14';
 build_requires 'Test::Pod::Coverage' => '1.08';
 
 ## Build README
-system 'pod2text lib/MooseX/Types/Dependent.pm > README'
+system 'pod2text lib/MooseX/Dependent.pm > README'
     if -e 'MANIFEST.SKIP';
     
 ## Instructions to Module::Install
