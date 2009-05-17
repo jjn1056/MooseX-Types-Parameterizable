@@ -17,14 +17,14 @@ MooseX::Dependent::Types - L<MooseX::Types> constraints that depend on values.
 
 Within your L<MooseX::Types> declared library module:
 
-	use MooseX::Dependent::Types qw(Dependent);
-	
-	subtype UniqueID,
-		as Dependent[Int, Set],
-		where {
-			my ($int, $set) = @_;
-			return $set->find($int) ? 0:1;
-		};
+    use MooseX::Dependent::Types qw(Dependent);
+
+    subtype UniqueID,
+        as Dependent[Int, Set],
+        where {
+            my ($int, $set) = @_;
+            return $set->find($int) ? 0:1;
+        };
 
 =head1 DESCRIPTION
 

@@ -25,30 +25,54 @@ Given some L<MooseX::Types> declared as:
 	subtype Set,
 		as Object,
 		where {
-			shift->can('find');
+		    shift->can('find');
 		};
 
 	subtype UniqueID,
 		as Dependent[Int, Set],
 		where {
-			my ($int, $set) = @_;
-			return $set->find($int) ? 0:1;
+		    my ($int, $set) = @_;
+		    return $set->find($int) ? 0:1;
 		};
 
 Assuming 'Set' is a class that creates and manages sets of values (lists of
 unique but unordered values) with a method '->find($n)', which returns true when
 $n is a member of the set and which you instantiate like so:
 
-	my $set_obj = Set->new(1,2,3,4,5); ## 1..5 are member of Set $set_obj'
+    my $set_obj = Set->new(1,2,3,4,5); ## 1..5 are member of Set $set_obj'
 
 You can then use this $set_obj as a parameter on the previously declared type
 constraint 'UniqueID'.  This $set_obj become part of the constraint (you can't
 actually use the constraint without it.)
 
-	UniqueID[$set_obj]->check(1); ## Not OK, since one isn't unique in $set_obj
-    UniqueID[$set_obj]->check(100);  ## OK, since 100 isn't in the set.
+    UniqueID[$set_obj]->check(1); ## Not OK, since one isn't unique in $set_obj
+    UniqueID[$set_obj]->check(100); ## OK, since 100 isn't in the set.
+    
+You can assign the result of a parameterized dependent type to a variable or to
+another type constraint, as like any other type constraint:
 
-Additionally, you can use these dependent types on your L<Moose> based classes
+    ## As variable
+    my $unique = UniqueID[$set_obj];
+    $unique->check(10); ## OK
+    $unique->check(2); ## Not OK, '2' is already in the set.
+    
+    ## As a new subtype
+    subtype UniqueInSet, as UniqueID[$set_obj];
+    UniqueInSet->check(99); ## OK
+    UniqueInSet->check(3); ## Not OK, '3' is already in the set.
+    
+However, you can't use a dependent type constraint to check or validate a value
+until you've parameterized the dependent value:
+
+    UniqueID->check(1000); ## Throws exception
+    UniqueID->validate(1000); ## Throws exception also
+    
+This is a hard exception, rather than just returning a failure message (via the
+validate method) or a false boolean (via the check method) since I consider an
+unparameterized type constraint to be more than just an invalid condition.  You
+will have to catch these in an eval if you think you might have them.
+
+Afterward, you can use these dependent types on your L<Moose> based classes
 and set the dependency target to the value of another attribute or method:
 
     TDB: Following is tentative
@@ -61,7 +85,7 @@ and set the dependency target to the value of another attribute or method:
     use MyApp::Types qw(UniqueID Set);
     
     has people => (is=>'ro', isa=>Set, required=>1);
-    has id => (is=>'ro', isa=>UniqueID, required=>1);
+    has id => (is=>'ro', dependent_isa=>UniqueID, required=>1);
 
 Please see the test cases for more examples.
 
