@@ -18,11 +18,10 @@ build_requires 'Test::More' => '0.86';
 
 auto_install;
 tests_recursive;
-
 WriteAll;
 
 package MY;
 
 sub postamble {
-    return "pod2text \$< > \$@";
+    return "README:\tpod2text \$< > \$@";
 }
