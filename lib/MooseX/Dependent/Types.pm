@@ -1,13 +1,8 @@
 package MooseX::Dependent::Types;
 
-use 5.008;
-
 use Moose::Util::TypeConstraints;
-use MooseX::Dependent::Meta::TypeConstraint::Parameterizable;
+use MooseX::Dependent::Meta::TypeConstraint::Dependent;
 use MooseX::Types -declare => [qw(Dependent)];
-
-our $VERSION = '0.01';
-our $AUTHORITY = 'cpan:JJNAPIORK';
 
 =head1 NAME
 
@@ -200,13 +195,9 @@ will cause an exception.
 =cut
 
 Moose::Util::TypeConstraints::get_type_constraint_registry->add_type_constraint(
-    MooseX::Dependent::Meta::TypeConstraint::Parameterizable->new(
+    MooseX::Dependent::Meta::TypeConstraint::Dependent->new(
         name => 'MooseX::Dependent::Types::Dependent',
-        parent => find_type_constraint('ArrayRef'),
-        constraint_generator=> sub { 
-			my ($dependent_val, $callback, $constraining_val) = @_;
-			return $callback->($dependent_val, $constraining_val);
-        },
+        parent => find_type_constraint('Any'),
     )
 );
 
@@ -222,3 +213,40 @@ it under the same terms as Perl itself.
 =cut
 
 1;
+
+__END__
+
+oose::Util::TypeConstraints::get_type_constraint_registry->add_type_constraint(
+    Moose::Meta::TypeConstraint::Parameterizable->new(
+        name => 'MooseX::Dependent::Types::Dependent',
+        parent => find_type_constraint('Any'),
+		constraint => sub { 0 },
+        constraint_generator=> sub { 
+			my ($dependent_val, $callback, $constraining_val) = @_;
+			return $callback->($dependent_val, $constraining_val);
+        },
+    )
+);
+
+
+
+$REGISTRY->add_type_constraint(
+    Moose::Meta::TypeConstraint::Parameterizable->new(
+        name               => 'HashRef',
+        package_defined_in => __PACKAGE__,
+        parent             => find_type_constraint('Ref'),
+        constraint         => sub { ref($_) eq 'HASH' },
+        optimized =>
+            \&Moose::Util::TypeConstraints::OptimizedConstraints::HashRef,
+        constraint_generator => sub {
+            my $type_parameter = shift;
+            my $check          = $type_parameter->_compiled_type_constraint;
+            return sub {
+                foreach my $x ( values %$_ ) {
+                    ( $check->($x) ) || return;
+                }
+                1;
+                }
+        }
+    )
+);

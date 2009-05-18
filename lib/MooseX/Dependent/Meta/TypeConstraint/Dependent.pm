@@ -1,19 +1,17 @@
 package ## Hide from PAUSE
- MooseX::Meta::TypeConstraint::Dependent;
+ MooseX::Dependent::Meta::TypeConstraint::Dependent;
 
 use Moose;
 use Moose::Util::TypeConstraints ();
-use MooseX::Meta::TypeCoercion::Dependent;
-use Devel::PartialDump;
 extends 'Moose::Meta::TypeConstraint';
 
 =head1 NAME
 
-MooseX::Meta::TypeConstraint::Dependent - Metaclass for Dependent type constraints.
+MooseX::Dependent::Meta::TypeConstraint::Dependent - Metaclass for Dependent type constraints.
 
 =head1 DESCRIPTION
 
-see L<MooseX::Types::Dependent> for examples and details of how to use dependent
+see L<MooseX::Dependent> for examples and details of how to use dependent
 types.  This class is a subclass of L<Moose::Meta::TypeConstraint> which
 provides the gut functionality to enable dependent type constraints.
 
@@ -21,60 +19,49 @@ provides the gut functionality to enable dependent type constraints.
 
 This class defines the following attributes.
 
-=head2 dependent_type_constraint
+=head2 parent_type_constraint
 
-The type constraint whose validity is being made dependent on a value that is a
-L</constraining_type_constraint>
+The type constraint whose validity is being made dependent.
 
 =cut
 
-has 'dependent_type_constraint' => (
+has 'parent_type_constraint' => (
     is=>'ro',
     isa=>'Object',
-    predicate=>'has_dependent_type_constraint',
-    handles=>{
-        check_dependent=>'check',
-        get_message_dependent=>'get_message',
+    predicate=>'has_parent_type_constraint',
+    default=> sub {
+        Moose::Util::TypeConstraints::find_type_constraint("Any");
     },
+    required=>1,
 );
 
-=head2 constraining_type_constraint
+=head2 constraining_value_type_constraint
 
 This is a type constraint which defines what kind of value is allowed to be the
-constraining value of the depending type.
+constraining value of the dependent type.
 
 =cut
 
-has 'constraining_type_constraint' => (
+has 'constraining_value_type_constraint' => (
     is=>'ro',
     isa=>'Object',
-    predicate=>'has_constraining_type_constraint',
-    handles=>{
-        check_constraining=>'check',
-        get_message_constraining=>'get_message',
+    predicate=>'has_constraining_value_type_constraint',
+    default=> sub {
+        Moose::Util::TypeConstraints::find_type_constraint("Any");
     },
+    required=>1,
 );
 
-=head2 comparison_callback
+=head2 constrainting_value
 
-This is a callback which returns a boolean value.  It get's passed the value
-L</constraining_type_constraint> validates as well as the check value.
-
-This callback is executed in addition to anything you put into a 'where' clause.
-However, the 'where' clause only get's the check value.
-
-Exercise some sanity, this should be limited to actual comparision operations,
-not as a sneaky way to mess with the constraining value.
-
-This should return a Bool, suitable for ->check (That is true for valid, false
-for fail).
+This is the actual value that constraints the L</parent_type_constraint>
 
 =cut
 
-has 'comparison_callback' => (
-    is=>'ro',
-    isa=>'CodeRef',
-    predicate=>'has_comparison_callback',
+has 'constraining_value' => (
+    reader=>'constraining_value',
+    writer=>'_set_constraining_value',
+    predicate=>'has_constraining_value',
 );
 
 =head2 constraint_generator
@@ -82,7 +69,6 @@ has 'comparison_callback' => (
 A subref or closure that contains the way we validate incoming values against
 a set of type constraints.
 
-=cut
 
 has 'constraint_generator' => (
     is=>'ro',
@@ -95,26 +81,9 @@ has 'constraint_generator' => (
 
 This class defines the following methods.
 
-=head2 new
-
-Initialization stuff.
-
-=cut
-
-around 'new' => sub {
-    my ($new, $class, @args)  = @_;
-    my $self = $class->$new(@args);
-    $self->coercion(MooseX::Meta::TypeCoercion::Dependent->new(
-        type_constraint => $self,
-    ));
-    return $self;
-};
-
 =head2 validate
 
 We intercept validate in order to custom process the message.
-
-=cut
 
 override 'validate' => sub {
     my ($self, @args) = @_;
@@ -139,7 +108,6 @@ override 'validate' => sub {
 Given some type constraints, use them to generate validation rules for an ref
 of values (to be passed at check time)
 
-=cut
 
 sub generate_constraint_for {
     my ($self, $callback) = @_;
@@ -177,6 +145,9 @@ Given a ref of type constraints, create a structured type.
 
 sub parameterize {
     my ($self, $dependent_tc, $callback, $constraining_tc) = @_;
+    
+    die 'something';
+    
     my $class = ref $self;
     my $name = $self->_generate_subtype_name($dependent_tc,  $callback, $constraining_tc);
     my $constraint_generator = $self->__infer_constraint_generator;
@@ -198,10 +169,10 @@ Returns a name for the dependent type that should be unique
 =cut
 
 sub _generate_subtype_name {
-    my ($self, $dependent_tc, $callback, $constraining_tc) = @_;
+    my ($self, $parent_tc, $constraining_tc) = @_;
     return sprintf(
-        "%s_depends_on_%s_via_%s",
-        $dependent_tc, $constraining_tc, $callback,
+        "%s_depends_on_%s",
+        $parent_tc, $constraining_tc,
     );
 }
 
@@ -228,8 +199,6 @@ sub __infer_constraint_generator {
             my $tc = shift @_;
             my $merged_tc = [
                 @$tc,
-                $self->comparison_callback,
-                $self->constraining_type_constraint,
             ];
             
             $self->constraint->($merged_tc, @_);            
@@ -267,15 +236,13 @@ around 'create_child_type' => sub {
     my ($create_child_type, $self, %opts) = @_;
     return $self->$create_child_type(
         %opts,
-        constraint_generator => $self->__infer_constraint_generator,
+        #constraint_generator => $self->__infer_constraint_generator,
     );
 };
 
 =head2 equals
 
 Override the base class behavior.
-
-=cut
 
 sub equals {
     my ( $self, $type_or_name ) = @_;
@@ -296,12 +263,22 @@ sub equals {
 
 Give you a better peek into what's causing the error.
 
-=cut
-
 around 'get_message' => sub {
     my ($get_message, $self, $value) = @_;
     return $self->$get_message($value);
 };
+
+=head2 _throw_error ($error)
+
+Given a string, delegate to the Moose exception object
+
+=cut
+
+sub _throw_error {
+    my $self = shift @_;
+    my $err = defined $_[0] ? $_[0] : 'Exception Thrown without Message';
+    require Moose; Moose->throw_error($err);
+}
 
 =head1 SEE ALSO
 

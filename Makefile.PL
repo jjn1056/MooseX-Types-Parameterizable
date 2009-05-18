@@ -15,6 +15,7 @@ requires 'Scalar::Util' => '1.19';
 requires 'Devel::PartialDump' => '0.07';
 
 build_requires 'Test::More' => '0.86';
+build_requires 'Test::Exception' => '0.27';
 
 auto_install;
 tests_recursive;
