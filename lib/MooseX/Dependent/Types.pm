@@ -133,6 +133,9 @@ is a capacity we current don't have.
 	
 =head2 Coercions
 
+You can place coercions on dependent types, however you need to pay attention to
+what you are actually coercion, the unparameterized or parameterized constraint.
+
     TBD: Need discussion and example of coercions working for both the
     constrainted and dependent type constraint.
 	
@@ -145,8 +148,11 @@ is a capacity we current don't have.
 
 Which should work like:
 
-	OlderThanAge[{older_than=>25}]->check(39);  ## is OK
-		
+	OlderThanAge[{older_than=>25}]->check(39); ## is OK
+	OlderThanAge[older_than=>1]->check(9); ## OK, using reference type inference
+
+And you can create coercions like:
+
 	coerce OlderThanAge,
 		from Tuple[Int, Int],
 		via {
