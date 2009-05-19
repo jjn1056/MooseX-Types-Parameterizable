@@ -210,7 +210,7 @@ sub __infer_constraint_generator {
 
 hook into compile_type_constraint so we can set the correct validation rules.
 
-=cut
+
 
 around 'compile_type_constraint' => sub {
     my ($compile_type_constraint, $self) = @_;
@@ -297,4 +297,5 @@ it under the same terms as Perl itself.
 
 =cut
 
-__PACKAGE__->meta->make_immutable;
+__PACKAGE__->meta->make_immutable(inline_constructor => 0);
+
