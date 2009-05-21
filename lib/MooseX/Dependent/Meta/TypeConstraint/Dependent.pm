@@ -3,6 +3,8 @@ package ## Hide from PAUSE
 
 use Moose;
 use Moose::Util::TypeConstraints ();
+use Scalar::Util qw(blessed);
+
 extends 'Moose::Meta::TypeConstraint';
 
 =head1 NAME
@@ -28,7 +30,6 @@ The type constraint whose validity is being made dependent.
 has 'parent_type_constraint' => (
     is=>'ro',
     isa=>'Object',
-    predicate=>'has_parent_type_constraint',
     default=> sub {
         Moose::Util::TypeConstraints::find_type_constraint("Any");
     },
@@ -45,22 +46,20 @@ constraining value of the dependent type.
 has 'constraining_value_type_constraint' => (
     is=>'ro',
     isa=>'Object',
-    predicate=>'has_constraining_value_type_constraint',
     default=> sub {
         Moose::Util::TypeConstraints::find_type_constraint("Any");
     },
     required=>1,
 );
 
-=head2 constrainting_value
+=head2 constraining_value
 
 This is the actual value that constraints the L</parent_type_constraint>
 
 =cut
 
 has 'constraining_value' => (
-    reader=>'constraining_value',
-    writer=>'_set_constraining_value',
+    is=>'ro',
     predicate=>'has_constraining_value',
 );
 
@@ -137,29 +136,69 @@ sub generate_constraint_for {
     };
 }
 
-=head2 parameterize ($dependent, $callback, $constraining)
+=head2 parameterize (@args)
 
 Given a ref of type constraints, create a structured type.
-
+    
 =cut
 
 sub parameterize {
-    my ($self, $dependent_tc, $callback, $constraining_tc) = @_;
-    
-    die 'something';
-    
+    my $self = shift @_;
     my $class = ref $self;
-    my $name = $self->_generate_subtype_name($dependent_tc,  $callback, $constraining_tc);
-    my $constraint_generator = $self->__infer_constraint_generator;
+    
+    if(blessed $_[0] && $_[0]->isa('Moose::Meta::TypeConstraint')) {
+        my $arg1 = shift @_;
+        my $arg2 = shift @_ || $self->constraining_value_type_constraint;
+        
+        Moose->throw_error("$arg2 is not a type constraint")
+         unless $arg2->isa('Moose::Meta::TypeConstraint');
+         
+        Moose->throw_error('Too Many Args!  Two are allowed.') if @_;
+        
+        return $class->new(
+            name => $self->_generate_subtype_name($arg1, $arg2),
+            parent => $self,
+            constraint => $self->constraint,
+            parent_type_constraint=>$arg1,
+            constraining_value_type_constraint => $arg2,
+        );
 
-    return $class->new(
-        name => $name,
-        parent => $self,
-        dependent_type_constraint=>$dependent_tc,
-        comparison_callback=>$callback,
-        constraint_generator => $constraint_generator,
-        constraining_type_constraint => $constraining_tc,
-    );
+    } else {
+        Moose->throw_error("$self already has a constraining value.") if
+         $self->has_constraining_value;
+        
+        my $args;
+        ## Jump through some hoops to let them do tc[key=>10] and tc[{key=>10}]
+        if(@_) {
+            if($#_) {
+                if($self->constraining_value_type_constraint->is_a_type_of('HashRef')) {
+                    $args = {@_};
+                } else {
+                    $args = [@_];
+                }                
+            } else {
+                $args = $_[0];
+            }
+
+        } else {
+            ## TODO:  Is there a use case for parameterizing null or undef?
+            Moose->throw_error('Cannot Parameterize null values.');
+        }
+        
+        if(my $err = $self->constraining_value_type_constraint->validate($args)) {
+            Moose->throw_error($err);
+        } else {
+            ## TODO memorize or do a registry lookup on the name as an optimization
+            return $class->new(
+                name => $self->name."[$args]",
+                parent => $self,
+                constraint => $self->constraint,
+                constraining_value => $args,
+                parent_type_constraint=>$self->parent_type_constraint,
+                constraining_value_type_constraint => $self->constraining_value_type_constraint,
+            );            
+        }
+    } 
 }
 
 =head2 _generate_subtype_name
@@ -171,60 +210,10 @@ Returns a name for the dependent type that should be unique
 sub _generate_subtype_name {
     my ($self, $parent_tc, $constraining_tc) = @_;
     return sprintf(
-        "%s_depends_on_%s",
+        $self."[%s, %s]",
         $parent_tc, $constraining_tc,
     );
 }
-
-=head2 __infer_constraint_generator
-
-This returns a CODEREF which generates a suitable constraint generator.  Not
-user servicable, you'll never call this directly.
-
-    TBD, this is definitely going to need some work.  Cargo culted from some
-    code I saw in Moose::Meta::TypeConstraint::Parameterized or similar.  I
-    Don't think I need this, since Dependent types require parameters, so
-    will always have a constrain generator.
-
-=cut
-
-sub __infer_constraint_generator {
-    my ($self) = @_;
-    if($self->has_constraint_generator) {
-        return $self->constraint_generator;
-    } else {
-        warn "I'm doing the questionable infer generator thing";
-        return sub {
-            ## I'm not sure about this stuff but everything seems to work
-            my $tc = shift @_;
-            my $merged_tc = [
-                @$tc,
-            ];
-            
-            $self->constraint->($merged_tc, @_);            
-        };
-    }    
-}
-
-=head2 compile_type_constraint
-
-hook into compile_type_constraint so we can set the correct validation rules.
-
-
-
-around 'compile_type_constraint' => sub {
-    my ($compile_type_constraint, $self) = @_;
-    
-    if($self->has_comparison_callback &&
-        $self->has_constraining_type_constraint) {
-        my $generated_constraint = $self->generate_constraint_for(
-            $self->comparison_callback,
-        );
-        $self->_set_constraint($generated_constraint);
-    }
-
-    return $self->$compile_type_constraint;
-};
 
 =head2 create_child_type
 
@@ -236,28 +225,74 @@ around 'create_child_type' => sub {
     my ($create_child_type, $self, %opts) = @_;
     return $self->$create_child_type(
         %opts,
-        #constraint_generator => $self->__infer_constraint_generator,
+        parent=> $self,
+        parent_type_constraint=>$self->parent_type_constraint,
+        constraining_value_type_constraint => $self->constraining_value_type_constraint,
     );
 };
 
-=head2 equals
+=head2 equals ($type_constraint)
 
-Override the base class behavior.
+Override the base class behavior so that a dependent type equal both the parent
+type and the overall dependent container.  This behavior may change if we can
+figure out what a dependent type is (multiply inheritance or a role...)
 
-sub equals {
-    my ( $self, $type_or_name ) = @_;
-    my $other = Moose::Util::TypeConstraints::find_type_constraint("$type_or_name");
+=cut
 
-    return (
-        $other->isa(__PACKAGE__)
-            and
-        $self->dependent_type_constraint->equals($other)
-            and
-        $self->constraining_type_constraint->equals($other)
-            and 
-        $self->parent->equals($other->parent)
-    );
+around 'equals' => sub {
+    my ( $equals, $self, $type_or_name ) = @_;
+    
+    my $other = defined $type_or_name ?
+      Moose::Util::TypeConstraints::find_type_constraint($type_or_name) :
+      Moose->throw_error("Can't call $self ->equals without a parameter");
+      
+    Moose->throw_error("$type_or_name is not a registered Type")
+     unless $other;
+     
+    if(my $parent = $other->parent) {
+        return $self->$equals($other)
+         || $self->parent->equals($parent);        
+    } else {
+        return $self->$equals($other);
+    }
+};
+
+around 'is_subtype_of' => sub {
+    my ( $is_subtype_of, $self, $type_or_name ) = @_;
+
+    my $other = defined $type_or_name ?
+      Moose::Util::TypeConstraints::find_type_constraint($type_or_name) :
+      Moose->throw_error("Can't call $self ->equals without a parameter");
+      
+    Moose->throw_error("$type_or_name is not a registered Type")
+     unless $other;
+     
+    return $self->$is_subtype_of($other)
+        || $self->parent_type_constraint->is_subtype_of($other);
+
+};
+
+sub is_a_type_of {
+    my ($self, @args) = @_;
+    return ($self->equals(@args) ||
+      $self->is_subtype_of(@args));
 }
+
+around 'check' => sub {
+    my ($check, $self, @args) = @_;
+    if($self->has_constraining_value) {
+        push @args, $self->constraining_value;
+    }
+    return $self->parent_type_constraint->check(@args) && $self->$check(@args)
+};
+
+around 'validate' => sub {
+    my ($validate, $self, @args) = @_;
+    if($self->has_constraining_value) {
+        push @args, $self->constraining_value;
+    }
+    return $self->parent_type_constraint->validate(@args) || $self->$validate(@args);
+};
 
 =head2 get_message
 
@@ -267,18 +302,6 @@ around 'get_message' => sub {
     my ($get_message, $self, $value) = @_;
     return $self->$get_message($value);
 };
-
-=head2 _throw_error ($error)
-
-Given a string, delegate to the Moose exception object
-
-=cut
-
-sub _throw_error {
-    my $self = shift @_;
-    my $err = defined $_[0] ? $_[0] : 'Exception Thrown without Message';
-    require Moose; Moose->throw_error($err);
-}
 
 =head1 SEE ALSO
 

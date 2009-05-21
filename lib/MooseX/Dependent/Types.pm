@@ -198,6 +198,7 @@ Moose::Util::TypeConstraints::get_type_constraint_registry->add_type_constraint(
     MooseX::Dependent::Meta::TypeConstraint::Dependent->new(
         name => 'MooseX::Dependent::Types::Dependent',
         parent => find_type_constraint('Any'),
+		constraint => sub {1},
     )
 );
 
