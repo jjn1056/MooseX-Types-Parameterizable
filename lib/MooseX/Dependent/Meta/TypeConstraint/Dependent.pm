@@ -223,6 +223,9 @@ modifier to make sure we get the constraint_generator
 
 around 'create_child_type' => sub {
     my ($create_child_type, $self, %opts) = @_;
+    if($self->has_constraining_value) {
+        $opts{constraining_value} = $self->constraining_value;
+    }
     return $self->$create_child_type(
         %opts,
         parent=> $self,
@@ -280,18 +283,22 @@ sub is_a_type_of {
 
 around 'check' => sub {
     my ($check, $self, @args) = @_;
-    if($self->has_constraining_value) {
-        push @args, $self->constraining_value;
-    }
     return $self->parent_type_constraint->check(@args) && $self->$check(@args)
 };
 
 around 'validate' => sub {
     my ($validate, $self, @args) = @_;
-    if($self->has_constraining_value) {
-        push @args, $self->constraining_value;
-    }
     return $self->parent_type_constraint->validate(@args) || $self->$validate(@args);
+};
+
+around '_compiled_type_constraint' => sub {
+    my ($method, $self, @args) = @_;
+    my $coderef = $self->$method(@args);
+    my @extra_args = $self->has_constraining_value ? $self->constraining_value : ();
+    return sub {
+        my @local_args = @_;
+        $coderef->(@local_args, @extra_args);
+    };
 };
 
 =head2 get_message

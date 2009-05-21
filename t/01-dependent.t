@@ -1,18 +1,19 @@
 
-use Test::More tests=>53; {
+use Test::More tests=>62; {
 	
 	use strict;
 	use warnings;
 	
 	use MooseX::Dependent::Types qw(Dependent);
 	use MooseX::Types::Moose qw(Int Any);
-	use MooseX::Types -declare=>[qw(SubDependent IntLessThan EvenInt)];
+	use MooseX::Types -declare=>[qw(SubDependent IntLessThan EvenInt
+		LessThan100GreatThen5andEvenIntNot44)];
 	use Moose::Util::TypeConstraints;
 	
 	ok Dependent->check(1),
 	  'Dependent is basically an "Any"';
 	  
-	ok !Dependent->validate(1),
+	is Dependent->validate(1), undef,
 	  'No Error Message';
 	  
 	is Dependent->parent, 'Any',
@@ -47,7 +48,7 @@ use Test::More tests=>53; {
 	ok SubDependent->check(1),
 	  'SubDependent is basically an "Any"';
 	  
-	ok !SubDependent->validate(1),
+	is SubDependent->validate(1), undef,
 	  'validate returned no error message';
 
 	is SubDependent->parent, 'MooseX::Dependent::Types::Dependent',
@@ -94,7 +95,7 @@ use Test::More tests=>53; {
 		as Dependent[EvenInt, Int],
 		where {
 			my $value = shift @_;
-			my $constraining = shift @_ || 200;
+			my $constraining = shift @_ || 200;  #warn "..... $constraining ......";
 			return ($value < $constraining && $value > 5);
 		}),
 	  'Created IntLessThan subtype';
@@ -178,6 +179,38 @@ use Test::More tests=>53; {
 	  
 	ok $lessThan100GreatThen5andEvenInt->check(42),
 	  'is Int, is even, greater than 5, less than 100';
+
+	ok subtype( LessThan100GreatThen5andEvenIntNot44,
+		as IntLessThan[100],
+		where {
+			my $value = shift @_;
+			return $value == 44 ? 0:1;
+		}),
+	  'Created LessThan100GreatThen5andEvenIntNot44 subtype';
+
+	ok !LessThan100GreatThen5andEvenIntNot44->check(150),
+	  '150 Not less than 100';
+	  
+	ok !LessThan100GreatThen5andEvenIntNot44->check(300),
+	  '300 Not less than 100 (check to make sure we are not defaulting 200)';
+	  
+	ok !LessThan100GreatThen5andEvenIntNot44->check(151),
+	  '151 Not less than 100';
+	  
+	ok !LessThan100GreatThen5andEvenIntNot44->check(2),
+	  'Not greater than 5';
+
+	ok !LessThan100GreatThen5andEvenIntNot44->check(51),
+	  'Not even';
+
+	ok !LessThan100GreatThen5andEvenIntNot44->check('aaa'),
+	  'Not Int';
+	  
+	ok LessThan100GreatThen5andEvenIntNot44->check(42),
+	  'is Int, is even, greater than 5, less than 100';
+
+	ok !LessThan100GreatThen5andEvenIntNot44->check(44),
+	  'is Int, is even, greater than 5, less than 100 BUT 44!';
 	  
 	#die IntLessThan->validate(100);
 	#use Data::Dump qw/dump/;

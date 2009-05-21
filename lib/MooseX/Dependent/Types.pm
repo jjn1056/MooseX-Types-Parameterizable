@@ -95,12 +95,12 @@ Or you could have done the following instead (example of re-paramterizing)
 		};
 
 	## subtype Range to re-parameterize Range with subtypes
-	subtype PositveRange,
+	subtype PositiveRange,
 		as Range[max=>PositiveInt, min=>PositiveInt];
 	
 	## create subtype via reparameterizing
 	subtype PositiveRangedInt,
-		as RangedInt[PositveRange];
+		as RangedInt[PositiveRange];
 
 Notice how re-parameterizing the dependent type 'RangedInt' works slightly
 differently from re-parameterizing 'PositiveRange'?  Although it initially takes
