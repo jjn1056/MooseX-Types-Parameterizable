@@ -51,7 +51,7 @@ for a integer, such as in:
 	RangedInt([{min=>50, max=>75}])->check(99); ## Not OK, 99 exceeds max
 	
 This throws a hard Moose exception.  You'll need to capture it in an eval or
-related exception catching system (see L<Try::Catch>).
+related exception catching system (see L<TryCatch>).
 
 	RangedInt([{min=>99, max=>10}])->check(10); ## Not OK, not a valid Range!
 

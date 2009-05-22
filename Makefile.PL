@@ -13,6 +13,8 @@ requires 'Moose' => '0.79';
 requires 'MooseX::Types' => '0.10';
 requires 'Scalar::Util' => '1.19';
 requires 'Devel::PartialDump' => '0.07';
+requires 'Data::Dump' => '';
+requires 'Digest::MD5' => '';
 
 build_requires 'Test::More' => '0.86';
 build_requires 'Test::Exception' => '0.27';

@@ -4,7 +4,9 @@ package ## Hide from PAUSE
 use Moose;
 use Moose::Util::TypeConstraints ();
 use Scalar::Util qw(blessed);
-
+use Data::Dump;
+use Digest::MD5;
+            
 extends 'Moose::Meta::TypeConstraint';
 
 =head1 NAME
@@ -99,24 +101,38 @@ sub parameterize {
              
             Moose->throw_error('Too Many Args!  Two are allowed.') if @_;
             
-            return $class->new(
-                name => $self->_generate_subtype_name($arg1, $arg2),
-                parent => $self,
-                constraint => $self->constraint,
-                parent_type_constraint=>$arg1,
-                constraining_value_type_constraint => $arg2,
-            );
+            my $name = $self->_generate_subtype_name($arg1, $arg2);
+            if(my $exists = Moose::Util::TypeConstraints::find_type_constraint($name)) {
+                return $exists;
+            } else {
+                my $type_constraint = $class->new(
+                    name => $name,
+                    parent => $self,
+                    constraint => $self->constraint,
+                    parent_type_constraint=>$arg1,
+                    constraining_value_type_constraint => $arg2,
+                );
+                Moose::Util::TypeConstraints::get_type_constraint_registry->add_type_constraint($type_constraint);
+                return $type_constraint;
+            }
         } else {
             Moose->throw_error("$arg1 is not a type of: ".$self->constraining_value_type_constraint->name)
              unless $arg1->is_a_type_of($self->constraining_value_type_constraint);
              
-            return $class->new(
-                name => $self->_generate_subtype_name($self->parent_type_constraint, $arg1),
-                parent => $self,
-                constraint => $self->constraint,
-                parent_type_constraint=>$self->parent_type_constraint,
-                constraining_value_type_constraint => $arg1,
-            );
+            my $name = $self->_generate_subtype_name($self->parent_type_constraint, $arg1);
+            if(my $exists = Moose::Util::TypeConstraints::find_type_constraint($name)) {
+                return $exists;
+            } else {
+                my $type_constraint = $class->new(
+                    name => $name,
+                    parent => $self,
+                    constraint => $self->constraint,
+                    parent_type_constraint=>$self->parent_type_constraint,
+                    constraining_value_type_constraint => $arg1,
+                );
+                Moose::Util::TypeConstraints::get_type_constraint_registry->add_type_constraint($type_constraint);
+                return $type_constraint;
+            }
         }
     } else {
         my $args;
@@ -140,15 +156,26 @@ sub parameterize {
         if(my $err = $self->constraining_value_type_constraint->validate($args)) {
             Moose->throw_error($err);
         } else {
-            ## TODO memorize or do a registry lookup on the name as an optimization
-            return $class->new(
-                name => $self->name."[$args]",
-                parent => $self,
-                constraint => $self->constraint,
-                constraining_value => $args,
-                parent_type_constraint=>$self->parent_type_constraint,
-                constraining_value_type_constraint => $self->constraining_value_type_constraint,
-            );            
+
+            my $sig = $args;
+            if(ref $sig) {
+                $sig = Digest::MD5::md5_hex(Data::Dump::dump($args));               
+            }
+            my $name = $self->name."[$sig]";
+            if(my $exists = Moose::Util::TypeConstraints::find_type_constraint($name)) {
+                return $exists;
+            } else {
+                my $type_constraint = $class->new(
+                    name => $name,
+                    parent => $self,
+                    constraint => $self->constraint,
+                    constraining_value => $args,
+                    parent_type_constraint=>$self->parent_type_constraint,
+                    constraining_value_type_constraint => $self->constraining_value_type_constraint,
+                );
+                Moose::Util::TypeConstraints::get_type_constraint_registry->add_type_constraint($type_constraint);
+                return $type_constraint;
+            }
         }
     } 
 }
@@ -264,6 +291,16 @@ around '_compiled_type_constraint' => sub {
         }
         $coderef->(@local_args, $constraining);
     };
+};
+
+around 'coerce' => sub {
+    my ($coerce, $self, @args) = @_;
+    if($self->coercion) {
+        if(my $value = $self->$coerce(@args)) {
+            return $value;
+        } 
+    }
+    return $self->parent->coerce(@args);
 };
 
 =head2 get_message

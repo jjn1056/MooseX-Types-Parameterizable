@@ -87,6 +87,8 @@ and set the dependency target to the value of another attribute or method:
     
     has people => (is=>'ro', isa=>Set, required=>1);
     has id => (is=>'ro', dependent_isa=>UniqueID, required=>1);
+    
+    TODO notes, coerce=>1 should coerce both check value and constraining value
 
 Please see the test cases for more examples.
 
