@@ -45,8 +45,9 @@ You can then use this $set_obj as a parameter on the previously declared type
 constraint 'UniqueID'.  This $set_obj become part of the constraint (you can't
 actually use the constraint without it.)
 
-    UniqueID[$set_obj]->check(1); ## Not OK, since one isn't unique in $set_obj
-    UniqueID[$set_obj]->check(100); ## OK, since 100 isn't in the set.
+    UniqueID([$set_obj])->check(1); ## Not OK, since one isn't unique in $set_obj
+    UniqueID([$set_obj])->check('AAA'); ## Not OK, since AAA is not an Int
+    UniqueID([$set_obj])->check(100); ## OK, since 100 isn't in the set.
     
 You can assign the result of a parameterized dependent type to a variable or to
 another type constraint, as like any other type constraint:

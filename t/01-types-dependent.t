@@ -1,14 +1,16 @@
 
-use Test::More tests=>62; {
+use Test::More tests=>79; {
 	
 	use strict;
 	use warnings;
 	
 	use MooseX::Dependent::Types qw(Dependent);
-	use MooseX::Types::Moose qw(Int Any);
-	use MooseX::Types -declare=>[qw(SubDependent IntLessThan EvenInt
-		LessThan100GreatThen5andEvenIntNot44)];
+	use MooseX::Types::Moose qw(Int Any Maybe);
 	use Moose::Util::TypeConstraints;
+	
+	use MooseX::Types -declare=>[qw(SubDependent IntLessThan EvenInt
+		LessThan100GreatThen5andEvenIntNot44 IntNot54
+		GreatThen5andEvenIntNot54or64)];
 	
 	ok Dependent->check(1),
 	  'Dependent is basically an "Any"';
@@ -92,10 +94,10 @@ use Test::More tests=>62; {
 	ok EvenInt->check(2), 'but 2 is!';
 	  
 	ok subtype( IntLessThan,
-		as Dependent[EvenInt, Int],
+		as Dependent[EvenInt, Maybe[Int]],
 		where {
 			my $value = shift @_;
-			my $constraining = shift @_ || 200;  #warn "..... $constraining ......";
+			my $constraining = shift @_ || 200;
 			return ($value < $constraining && $value > 5);
 		}),
 	  'Created IntLessThan subtype';
@@ -132,13 +134,13 @@ use Test::More tests=>62; {
 	is IntLessThan->name, 'main::IntLessThan',
 	  'Got correct name for IntLessThan';
 	
-	is IntLessThan->parent, 'MooseX::Dependent::Types::Dependent[main::EvenInt, Int]',
+	is IntLessThan->parent, 'MooseX::Dependent::Types::Dependent[main::EvenInt, Maybe[Int]]',
 	  'IntLessThan is a Dependent';
 	  
 	is IntLessThan->parent_type_constraint, EvenInt,
 	  'Parent is an Int';
 	  
-	is IntLessThan->constraining_value_type_constraint, Int,
+	is IntLessThan->constraining_value_type_constraint, (Maybe[Int]),
 	  'constraining is an Int';
 	  
 	ok IntLessThan->equals(IntLessThan),
@@ -184,7 +186,7 @@ use Test::More tests=>62; {
 		as IntLessThan[100],
 		where {
 			my $value = shift @_;
-			return $value == 44 ? 0:1;
+			return $value != 44;
 		}),
 	  'Created LessThan100GreatThen5andEvenIntNot44 subtype';
 
@@ -212,6 +214,70 @@ use Test::More tests=>62; {
 	ok !LessThan100GreatThen5andEvenIntNot44->check(44),
 	  'is Int, is even, greater than 5, less than 100 BUT 44!';
 	  
+	ok subtype( IntNot54,
+		as Maybe[Int],
+		where {
+			my $val = shift @_ || 200;
+			return $val != 54
+		}),
+	  'Created a subtype of Int';
+	  
+	ok IntNot54->check(100), 'Not 54';
+	ok !IntNot54->check(54), '54!!';
+	
+	ok( subtype( GreatThen5andEvenIntNot54or64,
+		as IntLessThan[IntNot54],
+		where {
+			my $value = shift @_;
+			return $value != 64;
+		}),
+	  'Created GreatThen5andEvenIntNot54or64 subtype');
+	  
+	is( (GreatThen5andEvenIntNot54or64->name),
+	   'main::GreatThen5andEvenIntNot54or64',
+	   'got expected name');
+	
+	ok GreatThen5andEvenIntNot54or64->check(150),
+		'150 is even, less than 200, not 54 or 64 but > 5';
+
+	ok !GreatThen5andEvenIntNot54or64->check(202),
+		'202 is even, exceeds 200, not 54 or 64 but > 5';
+		
+	is( ((GreatThen5andEvenIntNot54or64[100])->name),
+	  'main::GreatThen5andEvenIntNot54or64[100]',
+	  'got expected name');
+	  
+	ok !GreatThen5andEvenIntNot54or64([100])->check(150),
+	  '150 Not less than 100';
+	  
+	ok !GreatThen5andEvenIntNot54or64([100])->check(300),
+	  '300 Not less than 100 (check to make sure we are not defaulting 200)';
+	  
+	ok !GreatThen5andEvenIntNot54or64([100])->check(151),
+	  '151 Not less than 100';
+	  
+	ok !GreatThen5andEvenIntNot54or64([100])->check(2),
+	  'Not greater than 5';
+
+	ok !GreatThen5andEvenIntNot54or64([100])->check(51),
+	  'Not even';
+
+	ok !GreatThen5andEvenIntNot54or64([100])->check('aaa'),
+	  'Not Int';
+	  
+	ok GreatThen5andEvenIntNot54or64([100])->check(42),
+	  'is Int, is even, greater than 5, less than 100';
+	  
+	ok !GreatThen5andEvenIntNot54or64([100])->check(64),
+	  'is Int, is even, greater than 5, less than 100 BUT 64!';
+	
+	CHECKPARAM: {
+		eval { GreatThen5andEvenIntNot54or64([54])->check(32) };
+		like $@,
+		  qr/Validation failed for 'main::IntNot54' failed with value 54/,
+		  'Got Expected Error';	
+	}
+
 	#die IntLessThan->validate(100);
 	#use Data::Dump qw/dump/;
 	#warn dump IntLessThan;

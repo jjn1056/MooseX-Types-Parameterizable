@@ -20,7 +20,7 @@ Within your L<MooseX::Types> declared library module:
             my ($int, $set) = @_;
             return $set->find($int) ? 0:1;
         };
-
+		
 =head1 DESCRIPTION
 
 A L<MooseX::Types> library for creating dependent types.  A dependent type
@@ -44,24 +44,47 @@ for a integer, such as in:
 		where {
 			my ($value, $range) = @_;
 			return ($value >= $range->{min} &&
-			 $value =< $range->{max});
+			 $value <= $range->{max});
 		};
 		
-	RangedInt[{min=>10,max=>100}]->check(50); ## OK
-	RangedInt[{min=>50, max=>75}]->check(99); ## Not OK, 99 exceeds max
-	RangedInt[{min=>99, max=>10}]->check(10); ## Not OK, not a valid Range!
+	RangedInt([{min=>10,max=>100}])->check(50); ## OK
+	RangedInt([{min=>50, max=>75}])->check(99); ## Not OK, 99 exceeds max
+	
+This throws a hard Moose exception.  You'll need to capture it in an eval or
+related exception catching system (see L<Try::Catch>).
+
+	RangedInt([{min=>99, max=>10}])->check(10); ## Not OK, not a valid Range!
+
+If you can't accept a hard exception here, you'll need to test the constraining
+values first, as in:
+
+	my $range = {min=>99, max=>10};
+	if(my $err = Range->validate($range)) {
+		## Handle #$err
+	} else {
+		RangedInt($range)->check(99);
+	}
 	
 Please note that for ArrayRef or HashRef dependent type constraints, as in the
 example above, as a convenience we automatically ref the incoming type
 parameters, so that the above could also be written as:
 
-	RangedInt[min=>10,max=>100]->check(50); ## OK
-	RangedInt[min=>50, max=>75]->check(99); ## Not OK, 99 exceeds max
-	RangedInt[min=>99, max=>10]->check(10); ## Not OK, not a valid Range!
+	RangedInt([min=>10,max=>100])->check(50); ## OK
+	RangedInt([min=>50, max=>75])->check(99); ## Not OK, 99 exceeds max
+	RangedInt([min=>99, max=>10])->check(10); ## Exception, not a valid Range!
 
 This is the preferred syntax, as it improve readability and adds to the
 conciseness of your type constraint declarations.  An exception wil be thrown if
 your type parameters don't match the required reference type.
+
+Also not that if you 'chain' parameterization results with a method call like:
+
+	TypeConstraint([$ob])->method;
+	
+You need to have the "(...)" around the ArrayRef in the Type Constraint
+parameters.  This seems to have something to do with the precendent level of
+"->".  Patches or thoughts welcomed.  You only need to do this in the above
+case which I imagine is not a very common case.
 
 ==head2 Subtyping a Dependent type constraints
 
@@ -91,7 +114,8 @@ Or you could have done the following instead (example of re-paramterizing)
 	subtype PositiveInt,
 		as Int,
 		where {
-			shift >= 0;
+			my ($value, $range) = @_;
+			return $value >= 0;
 		};
 
 	## subtype Range to re-parameterize Range with subtypes
@@ -103,7 +127,7 @@ Or you could have done the following instead (example of re-paramterizing)
 		as RangedInt[PositiveRange];
 
 Notice how re-parameterizing the dependent type 'RangedInt' works slightly
-differently from re-parameterizing 'PositiveRange'?  Although it initially takes
+differently from re-parameterizing 'PositiveRange'  Although it initially takes
 two type constraint values to declare a dependent type, should you wish to
 later re-parameterize it, you only use a subtype of the second type parameter
 (the dependent type constraint) since the first type constraint sets the parent
@@ -143,8 +167,8 @@ what you are actually coercion, the unparameterized or parameterized constraint.
 
 Which should work like:
 
-	OlderThanAge[{older_than=>25}]->check(39); ## is OK
-	OlderThanAge[older_than=>1]->check(9); ## OK, using reference type inference
+	OlderThanAge([{older_than=>25}])->check(39); ## is OK
+	OlderThanAge([older_than=>1])->check(9); ## OK, using reference type inference
 
 And you can create coercions like:
 
@@ -214,40 +238,3 @@ it under the same terms as Perl itself.
 =cut
 
 1;
-
-__END__
-
-oose::Util::TypeConstraints::get_type_constraint_registry->add_type_constraint(
-    Moose::Meta::TypeConstraint::Parameterizable->new(
-        name => 'MooseX::Dependent::Types::Dependent',
-        parent => find_type_constraint('Any'),
-		constraint => sub { 0 },
-        constraint_generator=> sub { 
-			my ($dependent_val, $callback, $constraining_val) = @_;
-			return $callback->($dependent_val, $constraining_val);
-        },
-    )
-);
-
-
-
-$REGISTRY->add_type_constraint(
-    Moose::Meta::TypeConstraint::Parameterizable->new(
-        name               => 'HashRef',
-        package_defined_in => __PACKAGE__,
-        parent             => find_type_constraint('Ref'),
-        constraint         => sub { ref($_) eq 'HASH' },
-        optimized =>
-            \&Moose::Util::TypeConstraints::OptimizedConstraints::HashRef,
-        constraint_generator => sub {
-            my $type_parameter = shift;
-            my $check          = $type_parameter->_compiled_type_constraint;
-            return sub {
-                foreach my $x ( values %$_ ) {
-                    ( $check->($x) ) || return;
-                }
-                1;
-                }
-        }
-    )
-);
