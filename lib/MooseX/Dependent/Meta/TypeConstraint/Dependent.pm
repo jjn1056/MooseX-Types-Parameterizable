@@ -3,6 +3,7 @@ package ## Hide from PAUSE
 
 use Moose;
 use Moose::Util::TypeConstraints ();
+use MooseX::Dependent::Meta::TypeCoercion::Dependent;
 use Scalar::Util qw(blessed);
 use Data::Dump;
 use Digest::MD5;
@@ -69,6 +70,20 @@ has 'constraining_value' => (
 =head1 METHODS
 
 This class defines the following methods.
+
+=head2 BUILD
+
+Do some post build stuff
+
+=cut
+
+sub BUILD {
+    my ($self) = @_;
+    $self->coercion(
+        MooseX::Dependent::Meta::TypeCoercion::Dependent->new(
+            type_constraint => $self,
+        ));
+}
 
 =head2 parameterize (@args)
 
@@ -173,6 +188,8 @@ sub parameterize {
                     parent_type_constraint=>$self->parent_type_constraint,
                     constraining_value_type_constraint => $self->constraining_value_type_constraint,
                 );
+                
+                ## TODO This is probably going to have to go away (too many things added to the registry)
                 Moose::Util::TypeConstraints::get_type_constraint_registry->add_type_constraint($type_constraint);
                 return $type_constraint;
             }

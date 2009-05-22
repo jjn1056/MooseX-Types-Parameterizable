@@ -1,5 +1,5 @@
 
-use Test::More tests=>3; {
+use Test::More tests=>4; {
     
     use strict;
     use warnings;
@@ -8,5 +8,6 @@ use Test::More tests=>3; {
     use_ok 'MooseX::Dependent';
     use_ok 'MooseX::Dependent::Types';
     use_ok 'MooseX::Dependent::Meta::TypeConstraint::Dependent';
+    use_ok 'MooseX::Dependent::Meta::TypeCoercion::Dependent';
 }
 

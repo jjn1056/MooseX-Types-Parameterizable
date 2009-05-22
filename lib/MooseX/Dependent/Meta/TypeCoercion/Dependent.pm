@@ -1,12 +1,12 @@
 package ## Hide from PAUSE
- MooseX::Meta::TypeCoercion::Dependent;
+ MooseX::Dependent::Meta::TypeCoercion::Dependent;
 
 use Moose;
 extends 'Moose::Meta::TypeCoercion';
 
 =head1 NAME
 
-MooseX::Meta::TypeCoercion::Dependent - Coerce structured type constraints.
+MooseX::Meta::TypeCoercion::Dependent - Coerce Dependent type constraints.
 
 =head1 DESCRIPTION
 
