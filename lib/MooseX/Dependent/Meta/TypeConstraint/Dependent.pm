@@ -297,7 +297,7 @@ around 'coerce' => sub {
     my ($coerce, $self, @args) = @_;
     if($self->coercion) {
         if(my $value = $self->$coerce(@args)) {
-            return $value;
+            return $value if defined $value;
         } 
     }
     return $self->parent->coerce(@args);
