@@ -152,55 +152,71 @@ is a capacity we current don't have.
 	
 =head2 Coercions
 
-You can place coercions on dependent types, however you need to pay attention to
-what you are actually coercion, the unparameterized or parameterized constraint.
+Dependent types have some limited support for coercions.  Several things must
+be kept in mind.  The first is that the coercion targets the type constraint
+which is being made dependent, Not the dependent type.  So for example if you
+create a Dependent type like:
 
-    TBD: Need discussion and example of coercions working for both the
-    constrainted and dependent type constraint.
+	subtype RequiredAgeInYears,
+	  as Int;
+
+	subtype PersonOverAge,
+	  as Dependent[Person, RequiredAgeInYears]
+	  where {
+		my ($person, $required_years_old) = @_;
+		return $person->years_old > $required_years_old;
+	  }
+
+This would validate the following:
 	
-	subtype OlderThanAge,
-		as Dependent[Int, Dict[older_than=>Int]],
+	my $person = Person->new(age=>35);
+	PersonOverAge([18])->check($person);
+	
+You can then apply the following coercion
+
+	coerce PersonOverAge,
+	  from Dict[age=>int],
+	  via {Person->new(%$_)},
+	  from Int,
+	  via {Person->new(age=>$_)};
+	  
+This coercion would then apply to all the following:
+
+	PersonOverAge([18])->check(30); ## via the Int coercion
+	PersonOverAge([18])->check({age=>50}); ## via the Dict coercion
+
+However, you are not allowed to place coercions on dependent types that have
+had their constraining value filled, nor subtypes of such.  For example:
+
+	coerce PersonOverAge[18],
+	  from DateTime,
+	  via {$_->years};
+	  
+That would generate a hard exception.  This is a limitation for now until I can
+devise a smarter way to cache the generated type constraints.  However, I doubt
+it will be a significant limitation, since the general use case is supported.
+
+Lastly, the constraining value is available in the coercion in much the same way
+it is available to the constraint.
+
+	## Create a type constraint where a Person must be in the set
+	subtype PersonInSet,
+		as Dependent[Person, PersonSet],
 		where {
-			my ($value, $dict) = @_;
-			return $value > $dict->{older_than} ? 1:0;
-		};
+			my ($person, $person_set) = @_;
+			$person_set->find($person);
+		}
 
-Which should work like:
-
-	OlderThanAge([{older_than=>25}])->check(39); ## is OK
-	OlderThanAge([older_than=>1])->check(9); ## OK, using reference type inference
-
-And you can create coercions like:
-
-	coerce OlderThanAge,
-		from Tuple[Int, Int],
+	coerce PersonInSet,
+		from HashRef,
 		via {
-			my ($int, $int);
-			return [$int, {older_than=>$int}];
+			my ($hashref, $person_set) = @_;
+			return $person_set->create($hash_ref);
 		};
 
 =head2 Recursion
 
-Newer versions of L<MooseX::Types> support recursive type constraints.  That is
-you can include a type constraint as a contained type constraint of itself.
-Recursion is support in both the dependent and constraining type constraint. For
-example, if we assume an Object hierarchy like Food -> [Grass, Meat]
-	
-	TODO: DOES THIS EXAMPLE MAKE SENSE?
-	
-    subtype Food,
-		as Dependent[Food, Food],
-		where {
-			my ($value, $allowed_food_type) = @_;
-			return $value->isa($allowed_food_type);
-		};
-	
-	my $grass = Food::Grass->new;
-	my $meat = Food::Meat->new;
-	my $vegetarian = Food[$grass];
-	
-	$vegetarian->check($grass); ## Grass is the allowed food of a vegetarian
-	$vegetarian->check($meat); ## BANG, vegetarian can't eat meat!
+	TBD
 
 =head1 TYPE CONSTRAINTS
 

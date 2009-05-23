@@ -77,13 +77,13 @@ Do some post build stuff
 
 =cut
 
-sub BUILD {
-    my ($self) = @_;
-    $self->coercion(
-        MooseX::Dependent::Meta::TypeCoercion::Dependent->new(
-            type_constraint => $self,
-        ));
-}
+around 'new' => sub {
+    my ($new, $class, @args) = @_;
+    my $self = $class->$new(@args);
+    my $coercion = MooseX::Dependent::Meta::TypeCoercion::Dependent->new(type_constraint => $self);
+    $self->coercion($coercion);    
+    return $self;
+};
 
 =head2 parameterize (@args)
 
@@ -190,7 +190,7 @@ sub parameterize {
                 );
                 
                 ## TODO This is probably going to have to go away (too many things added to the registry)
-                Moose::Util::TypeConstraints::get_type_constraint_registry->add_type_constraint($type_constraint);
+                ##Moose::Util::TypeConstraints::get_type_constraint_registry->add_type_constraint($type_constraint);
                 return $type_constraint;
             }
         }
@@ -310,14 +310,34 @@ around '_compiled_type_constraint' => sub {
     };
 };
 
+## if the constraining value has been added, no way to do a coercion.
 around 'coerce' => sub {
     my ($coerce, $self, @args) = @_;
-    if($self->coercion) {
-        if(my $value = $self->$coerce(@args)) {
-            return $value if defined $value;
+    
+    if($self->has_constraining_value) {
+        push @args, $self->constraining_value;
+        if(@{$self->coercion->type_coercion_map}) {
+            my $coercion = $self->coercion;
+            warn "coercion map found in $coercion found for $self";
+            my $coerced = $self->$coerce(@args);
+            if(defined $coerced) {
+                warn "got coerced args of ", $coerced;
+                return $coerced;
+            } else {
+                my $parent = $self->parent;
+                warn "no coercion for $self, using $parent";
+                return $parent->coerce(@args); 
+            }
+        } else {
+            my $parent = $self->parent;
+            #warn "no coercion for $self, using $parent";
+            return $parent->coerce(@args); 
         } 
     }
-    return $self->parent->coerce(@args);
+    else {
+        return $self->$coerce(@args);
+    }
+    return;
 };
 
 =head2 get_message
@@ -346,5 +366,6 @@ it under the same terms as Perl itself.
 
 =cut
 
-__PACKAGE__->meta->make_immutable(inline_constructor => 0);
+1;
+##__PACKAGE__->meta->make_immutable(inline_constructor => 0);
 

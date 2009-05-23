@@ -1,5 +1,5 @@
 
-use Test::More tests=>14; {
+use Test::More tests=>15; {
 	
 	use strict;
 	use warnings;
@@ -8,7 +8,7 @@ use Test::More tests=>14; {
 	use MooseX::Types::Moose qw(Int Str HashRef ArrayRef);
 	
 	use MooseX::Types -declare=>[qw(
-		InfoHash OlderThanAge
+		InfoHash OlderThanAge DefinedOlderThanAge
 	)];
 	
 	ok subtype( InfoHash,
@@ -32,31 +32,17 @@ use Test::More tests=>14; {
 	ok OlderThanAge([older_than=>1])->check(9), '9 is older than 1';
 	ok !OlderThanAge([older_than=>1])->check('aaa'), '"aaa" not an int';
 	ok !OlderThanAge([older_than=>10])->check(9), '9 is not older than 10';
-	
-	my $a = OlderThanAge([older_than=>1]);
-	
-	coerce $a,
-		from ArrayRef,
-		via {
-			my ($arrayref, $constraining_value) = @_;
-			my $age;
-			$age += $_ for @$arrayref;
-			return $age;
-		};
-	
-	is $a->coerce([1,2,3]), 6, 'Got expected Value';
-	
+		
 	coerce OlderThanAge,
 		from HashRef,
-		via {
+		via { 
 			my ($hashref, $constraining_value) = @_;
-			return keys %$hashref;
-		};
-
-	coerce OlderThanAge([older_than=>5]),
+			return scalar(keys(%$hashref));
+		},
 		from ArrayRef,
-		via {
+		via { 
 			my ($arrayref, $constraining_value) = @_;
+			#use Data::Dump qw/dump/; warn dump $constraining_value;
 			my $age;
 			$age += $_ for @$arrayref;
 			return $age;
@@ -66,10 +52,27 @@ use Test::More tests=>14; {
 	  'Got corect name for OlderThanAge';
 	is OlderThanAge([older_than=>5])->coerce([1..10]), 55,
 	  'Coerce works';
+	is OlderThanAge([older_than=>5])->coerce({a=>1,b=>2,c=>3,d=>4}), 4,
+	  'inherit Coerce works';	  
 	like OlderThanAge([older_than=>2])->name, qr/main::OlderThanAge\[/,
 	  'Got correct name for OlderThanAge([older_than=>2])';
-	is OlderThanAge([older_than=>2])->coerce({a=>1,b=>2,c=>3,d=>4}), 4,
+	is OlderThanAge([older_than=>2])->coerce({a=>5,b=>6,c=>7,d=>8}), 4,
 	  'inherited Coerce works';
-	
-	
+
+	SKIP: {
+		skip 'Type Coercions on defined types not supported yet', 1;
+
+		subtype DefinedOlderThanAge, as OlderThanAge([older_than=>1]);
+		
+		coerce DefinedOlderThanAge,
+			from ArrayRef,
+			via {
+				my ($arrayref, $constraining_value) = @_;
+				my $age;
+				$age += $_ for @$arrayref;
+				return $age;
+			};
+		
+		is DefinedOlderThanAge->coerce([1,2,3]), 6, 'Got expected Value';
+	}
 }
