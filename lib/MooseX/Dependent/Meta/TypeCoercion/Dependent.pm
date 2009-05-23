@@ -16,15 +16,12 @@ TBD
 
 This class defines the following methods.
 
-=head
+=head add_type_coercions
+
+method modification to throw exception should we try to add a coercion on a
+dependent type that's had it's constraining value filled
 
 =cut
-
-sub coerce {
-    my $self = shift @_;
-    my $coderef = $self->_compiled_type_coercion;
-    return $coderef->(@_);
-}
 
 around 'add_type_coercions' => sub {
     my ($add_type_coercions, $self, @args) = @_;
@@ -34,6 +31,14 @@ around 'add_type_coercions' => sub {
         return $self->$add_type_coercions(@args);
     }
 };
+
+
+## These two are here until I can merge change upstream to Moose
+sub coerce {
+    my $self = shift @_;
+    my $coderef = $self->_compiled_type_coercion;
+    return $coderef->(@_);
+}
 
 sub compile_type_coercion {
     my $self = shift;
@@ -65,9 +70,6 @@ sub compile_type_coercion {
         return $thing;
     });
 }
-
-
-
 
 =head1 SEE ALSO
 

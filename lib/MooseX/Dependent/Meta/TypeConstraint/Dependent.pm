@@ -77,6 +77,9 @@ Do some post build stuff
 
 =cut
 
+## Right now I add in the dependent type coercion until I can merge some Moose
+## changes upstream
+
 around 'new' => sub {
     my ($new, $class, @args) = @_;
     my $self = $class->$new(@args);
@@ -256,6 +259,13 @@ around 'equals' => sub {
     }
 };
 
+=head2 is_subtype_of
+
+Method modifier to make sure we match on subtype for both the dependent type
+as well as the type being made dependent
+
+=cut
+
 around 'is_subtype_of' => sub {
     my ( $is_subtype_of, $self, $type_or_name ) = @_;
 
@@ -271,11 +281,11 @@ around 'is_subtype_of' => sub {
 
 };
 
-sub is_a_type_of {
-    my ($self, @args) = @_;
-    return ($self->equals(@args) ||
-      $self->is_subtype_of(@args));
-}
+=head2 check
+
+As with 'is_subtype_of', we need to dual dispatch the method request
+
+=cut
 
 around 'check' => sub {
     my ($check, $self, @args) = @_;
@@ -285,6 +295,12 @@ around 'check' => sub {
     );
 };
 
+=head2 validate
+
+As with 'is_subtype_of', we need to dual dispatch the method request
+
+=cut
+
 around 'validate' => sub {
     my ($validate, $self, @args) = @_;
     return (
@@ -292,6 +308,14 @@ around 'validate' => sub {
         $self->$validate(@args)
     );
 };
+
+=head2 _compiled_type_constraint
+
+modify this method so that we pass along the constraining value to the constraint
+coderef and also throw the correct error message if the constraining value does
+not match it's requirement.
+
+=cut
 
 around '_compiled_type_constraint' => sub {
     my ($method, $self, @args) = @_;
@@ -310,12 +334,18 @@ around '_compiled_type_constraint' => sub {
     };
 };
 
-## if the constraining value has been added, no way to do a coercion.
+=head2 coerce
+
+More method modification to support dispatch coerce to a parent.
+
+=cut
+
 around 'coerce' => sub {
     my ($coerce, $self, @args) = @_;
     
     if($self->has_constraining_value) {
         push @args, $self->constraining_value;
+        ##Checking the type_coercion_map is probably evil
         if(@{$self->coercion->type_coercion_map}) {
             my $coercion = $self->coercion;
             warn "coercion map found in $coercion found for $self";
