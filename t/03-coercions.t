@@ -53,11 +53,11 @@ use Test::More tests=>15; {
 	is OlderThanAge([older_than=>5])->coerce([1..10]), 55,
 	  'Coerce works';
 	is OlderThanAge([older_than=>5])->coerce({a=>1,b=>2,c=>3,d=>4}), 4,
-	  'inherit Coerce works';	  
+	  'Coerce works';	  
 	like OlderThanAge([older_than=>2])->name, qr/main::OlderThanAge\[/,
 	  'Got correct name for OlderThanAge([older_than=>2])';
 	is OlderThanAge([older_than=>2])->coerce({a=>5,b=>6,c=>7,d=>8}), 4,
-	  'inherited Coerce works';
+	  'Coerce works';
 
 	SKIP: {
 		skip 'Type Coercions on defined types not supported yet', 1;

@@ -345,22 +345,17 @@ around 'coerce' => sub {
     
     if($self->has_constraining_value) {
         push @args, $self->constraining_value;
-        ##Checking the type_coercion_map is probably evil
         if(@{$self->coercion->type_coercion_map}) {
             my $coercion = $self->coercion;
-            warn "coercion map found in $coercion found for $self";
             my $coerced = $self->$coerce(@args);
             if(defined $coerced) {
-                warn "got coerced args of ", $coerced;
                 return $coerced;
             } else {
                 my $parent = $self->parent;
-                warn "no coercion for $self, using $parent";
                 return $parent->coerce(@args); 
             }
         } else {
             my $parent = $self->parent;
-            #warn "no coercion for $self, using $parent";
             return $parent->coerce(@args); 
         } 
     }
