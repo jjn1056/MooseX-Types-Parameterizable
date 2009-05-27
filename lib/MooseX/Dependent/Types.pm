@@ -13,13 +13,40 @@ MooseX::Dependent::Types - L<MooseX::Types> constraints that depend on values.
 Within your L<MooseX::Types> declared library module:
 
     use MooseX::Dependent::Types qw(Dependent);
+	
+	subtype Set,
+		as class_type("Set::Scalar");
 
-    subtype UniqueID,
+    subtype UniqueInt,
         as Dependent[Int, Set],
         where {
             my ($int, $set) = @_;
-            return $set->find($int) ? 0:1;
+            return !$set->has($int);
         };
+		
+	subtype PositiveSet,
+		as Set,
+		where {
+			my ($set) = @_;
+			return !grep {$_ <0 } $set->members;
+		};
+		
+    subtype PositiveUniqueInt,
+        as UniqueInt[PositiveSet];
+	
+	my $set = Set::Scalar->new(1,2,3);
+
+	UniqueInt([$set])->check(100);  ## Okay, 100 isn't in (1,2,3)
+	UniqueInt([$set])->check(-99);  ## Okay, -99 isn't in (1,2,3)
+	UniqueInt([$set])->check(2);  ## Not OK, 2 is in (1,2,3)
+	
+	PositiveUniqueInt([$set])->check(100);  ## Okay, 100 isn't in (1,2,3)
+	PositiveUniqueInt([$set])->check(-99);  ## Not OK, -99 not Positive Int
+	PositiveUniqueInt([$set])->check(2);  ## Not OK, 2 is in (1,2,3)
+	
+	my $negative_set = Set::Scalar->new(-1,-2,-3);
+	
+	UniqueInt([$negative_set])->check(100);  ## Throws exception
 		
 =head1 DESCRIPTION
 
@@ -108,7 +135,7 @@ Example subtype with additional constraints:
 			shift >= 0;  			
 		};
 		
-Or you could have done the following instead (example of re-paramterizing)
+Or you could have done the following instead:
 
 	## Subtype of Int for positive numbers
 	subtype PositiveInt,
