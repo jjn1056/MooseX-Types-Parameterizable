@@ -20,6 +20,11 @@ see L<MooseX::Dependent> for examples and details of how to use dependent
 types.  This class is a subclass of L<Moose::Meta::TypeConstraint> which
 provides the gut functionality to enable dependent type constraints.
 
+This class is not intended for public consumption.  Please don't subclass it
+or rely on it.  Chances are high stuff here is going to change a lot.  For
+example, I will probably refactor this into several classes to get rid of all
+the ugly conditionals.
+
 =head1 ATTRIBUTES
 
 This class defines the following attributes.

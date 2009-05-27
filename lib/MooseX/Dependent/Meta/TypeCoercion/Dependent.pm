@@ -10,7 +10,8 @@ MooseX::Meta::TypeCoercion::Dependent - Coerce Dependent type constraints.
 
 =head1 DESCRIPTION
 
-TBD
+This class is not intended for public consumption.  Please don't subclass it
+or rely on it.  Chances are high stuff here is going to change a lot.
 
 =head1 METHODS
 
@@ -19,7 +20,10 @@ This class defines the following methods.
 =head add_type_coercions
 
 method modification to throw exception should we try to add a coercion on a
-dependent type that's had it's constraining value filled
+dependent type that is already defined by a constraining value.  We do this
+since defined dependent type constraints inherit their coercion from the parent
+constraint.  It makes no sense to even be using dependent types if you know the
+constraining value beforehand!
 
 =cut
 
@@ -33,7 +37,8 @@ around 'add_type_coercions' => sub {
 };
 
 
-## These two are here until I can merge change upstream to Moose
+## These two are here until I can merge change upstream to Moose.  These are two
+## very minor changes we can probably just put into Moose without breaking stuff
 sub coerce {
     my $self = shift @_;
     my $coderef = $self->_compiled_type_coercion;
