@@ -1,0 +1,77 @@
+
+use MooseX::Types -declare [qw/Str/]; 
+use MooseX::Types::Faceted qw(Str);
+
+subtype Name()
+ => as Str()
+ => with hasMaxLength(25), 
+ isWordCharacters(), 
+ callBack { 
+ 
+ 
+ 
+ => as Faceted[
+ 	Str(),
+ 	hasMaxLength(25),
+ ],
+
+
+use MooseX::Types::Moose qw(Int Str ArrayRef HashRef Object);
+use MooseX::Types::Structured qw(Dict);
+
+use MooseX::Types
+	-declare => [qw/PositiveInt Length/];
+
+use MooseX::Types::Parameterizable 
+	-declare => [qw/MinLength MaxLength Size/];
+
+subtype PositiveInt,
+	as Int,
+	where { $_ >= 0 };
+
+type Length,
+	where { exists $_ && defined $_ };
+
+coerce Length,
+	from PositiveInt,
+	via { $_ },
+	from Str,
+	via { length $_ },
+	from ArrayRef,
+	via { scalar @$_ },
+	from HashRef,
+	via { scalar keys %$_ };
+
+subtype MinLength[Length],
+	as Value,
+	where {
+		my ($check, $parameter) = @_
+		return $parameter < length($check) ? 1:0;
+	};
+
+subtype MaxLength[Length],
+	as Value,
+	where {
+		my ($check, $parameter) = @_
+		return $parameter >= length($check) ? 1:0;
+	};
+
+subtype Size[Dict[max=>MaxLength,min=>MinLength]],
+	as Value,
+	where {
+		my ($check, $parameter) = @_;
+		$parameter->{max} > $parameter->{min};
+	}
+
+
+	Size[min=>5,max=>10]->check('aabbcc');  ## OK, length 6 in range
+	Size[min=>5,max=>10]->check('aa'); ## Not OK, length 2 out of range
+	Size[min=>5,max=>10]->check([1..8]); ## OK via coercion
+	Size[min=>1,max=>3]->check({a=>1,b=>2}); ## Ok via coercion
+	Size[min=>5,max=>10]->check($object); ## Not at least an Int
+
+	Size[min=>-10,max=>100]; ## NOT PositiveInt
+	Size[min=>'aaa', max=>100]; ## Not an Int
+	Size[min=>5, max=>2]; ## Not a Range
+ 
+

@@ -1,0 +1,192 @@
+
+## MyApp/Types.pm;
+
+	use MooseX::Declare::Types;
+	use MooseX::Types::Moose qw(Str Int);
+	use MooseX::Types::Structured qw(Dict Optional);
+	
+	## Possible interface for facets, with are a bit like roles for types.  This
+	## just a sketch, doesn't represent a lot of thought.
+	use MooseX::Types::Facets {
+		Str => [qw/ hasMinimumLength hasMaximumLength isWords matchesRegex/ ],
+	};
+	
+	subtype FullName {
+		as Str;
+		having hasMinimumLength(2),
+			matchesPattern(
+				strategy=>Regexp,
+				pattern=>qr/
+					^
+					\w{2,35}
+					\s
+					\w{0,25}
+					\s*
+					\w{2,50}
+					$
+				/x
+			);
+			
+		parameter length => (
+			isa=>Int, 
+			default=>100
+		);
+		
+		parameterizes($p Parameters) {
+			having hasMaximumLength($p->length);
+		}
+	}
+	
+	subtype Name {
+	
+		parameter total_length => (
+			isa=>Int,
+			default=>60,
+		);
+		
+		parameter part_max_lengths => (
+			isa=>Dict[
+				first=>Optional[Int],
+				middle=>Optional[Int],
+				last=>Optional[Int],
+			],
+		);
+		
+		my $Namepart = subtype {
+			as Str;
+			having isWords(maximum_words=>1), 
+				hasMinimumLength(2);
+
+			parameter max_length => (
+				isa=>int, 
+				default=>20
+			);
+			
+			parameterize($p Parameters) {
+				having hasMaximumLength($p->max_length);
+			}
+		}
+
+		parameterize($p Parameters) {
+
+			as Dict[
+				first => $NamePart(
+					max_length=>$p->part_max_lengths->{first},
+				),
+				middle => Optional[
+					$NamePart(
+						max_length=>$p->part_max_lengths->{middle}
+					),
+				],
+				last => $NamePart(
+					max_length=>$p->part_max_lengths->{last},
+				),
+			];
+			
+			having hasMaximumLength($p->total_length);		
+		}
+	}
+	
+	
+## MyApp/MyClass/Foo.pm
+
+	use MooseX::Declare;
+	use MooseX::Types qw(EmailAddress);
+	use MyApp::Types qw(FullName Name);
+	
+	Class Foo {
+	
+		with Class::DBIx::Role::Result => (
+			resultset_class => '',
+			fields => {
+				fullname => ...,
+				name => ...,
+			},
+		);
+	
+		## fullname would have a minimum of 2 characters, a maximum of 45 and 
+		## would be composed of a maximum of 3 words separated by whitespace
+		
+		has fullname => (
+			is=>'rw', 
+			isa=>FullName(length=>45),
+		);
+
+		## name would be a HashRef with two required keys 'first' and 'last'
+		## and a single optional key called 'middle'.  each key value must be a
+		## str composed of a single word with a minimum character length of 2
+		## and maximum lengths of first=>35, middle=>25 and last=>50.  Also the
+		## overall total length.
+		
+		has name => (
+			is=>'rw',
+			isa=>Name(
+				total_length=>95,
+				part_max_lengths=>{
+					first=>35,
+					middle=>25,
+					last=>50,
+				},
+			),
+		);
+		
+		method email($recipient Email) {
+			....
+		}
+	}
+	
+	
+	use aliased MyApp::MyClass::Foo;
+	
+	my $foo = Foo->new(
+		fullname=>'Vanessa Li',
+		name=>{
+			first=>'John',
+			middle=>'James',
+			last=>'Napiorkowski',
+		},
+	);
+	
+	my $foo_set = Foo->search( name => sub { $self->search ... });
+	
+	
+	## COERCSIONS     
+     
+
+coercion fixPerson($person Person) {
+	from Tuple($name Str, $age Int) {
+		$person->XXXXX(name=>$name, age=>$age);
+	}
+	from Dict(
+		:$fullname Fullname,
+		:$dob DateTime
+	) {
+		my $name = "$fullname->{first} $fullname->{last}";	
+		my $age = ($dob - DateTime-now)->years;
+		return $person->XXX(name=>$name, age=>$age);
+	}
+}
+
+
+has 'attribute' => (
+	is=>'rw',
+	isa=> Person->coercions(fixPerson, MorePeople),
+);
+
+
+
+subtype myDelegate,
+ as Delegate[Signature];
+ 
+ 
+type Signature,
+ as Optional[
+ 	Int,
+ 	Pairs[
+ 		Pair[name=>Int],
+ 		Pair[key=>Str],
+ 	],
+ 	
+ 
+ 
+ 
