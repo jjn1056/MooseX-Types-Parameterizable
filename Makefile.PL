@@ -6,7 +6,7 @@ use inc::Module::Install 1.00;
 name 'MooseX-Types-Parameterizable';
 all_from 'lib/MooseX/Types/Parameterizable.pm';
 author 'John Napiorkowski <jjnapiork@cpan.org>';
-repository 'git://github.com/jjn1056/MooseX-Types-Parameterizable.git'
+repository 'git://github.com/jjn1056/MooseX-Types-Parameterizable.git';
 license 'perl';
 
 requires 'Moose' => '1.08';
