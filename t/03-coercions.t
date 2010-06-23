@@ -4,7 +4,7 @@ use Test::More tests=>15; {
 	use strict;
 	use warnings;
 
-	use MooseX::Parameterizable::Types qw(Parameterizable);
+	use MooseX::Types::Parameterizable qw(Parameterizable);
 	use MooseX::Types::Moose qw(Int Str HashRef ArrayRef);
 	
 	use MooseX::Types -declare=>[qw(

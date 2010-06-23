@@ -1,5 +1,5 @@
 package ## Hide from PAUSE
- MooseX::Parameterizable::Meta::TypeCoercion::Parameterizable;
+ MooseX::Meta::TypeCoercion::Parameterizable;
 
 use Moose;
 extends 'Moose::Meta::TypeCoercion';

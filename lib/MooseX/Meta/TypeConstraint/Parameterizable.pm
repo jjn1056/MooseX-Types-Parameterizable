@@ -1,9 +1,9 @@
 package ## Hide from PAUSE
- MooseX::Parameterizable::Meta::TypeConstraint::Parameterizable;
+ MooseX::Meta::TypeConstraint::Parameterizable;
 
 use Moose;
 use Moose::Util::TypeConstraints ();
-use MooseX::Parameterizable::Meta::TypeCoercion::Parameterizable;
+use MooseX::Meta::TypeCoercion::Parameterizable;
 use Scalar::Util qw(blessed);
 use Data::Dump;
 use Digest::MD5;
@@ -12,11 +12,11 @@ extends 'Moose::Meta::TypeConstraint';
 
 =head1 NAME
 
-MooseX::Parameterizable::Meta::TypeConstraint::Parameterizable - Metaclass for Parameterizable type constraints.
+MooseX::Meta::TypeConstraint::Parameterizable - Metaclass for Parameterizable type constraints.
 
 =head1 DESCRIPTION
 
-see L<MooseX::Parameterizable> for examples and details of how to use parameterizable
+see L<MooseX::Parameterizable::Types> for how to use parameterizable
 types.  This class is a subclass of L<Moose::Meta::TypeConstraint> which
 provides the gut functionality to enable parameterizable type constraints.
 
@@ -83,12 +83,12 @@ Do some post build stuff
 =cut
 
 ## Right now I add in the parameterizable type coercion until I can merge some Moose
-## changes upstream
+## changes upstream.  TODO change to BUILD or something
 
 around 'new' => sub {
     my ($new, $class, @args) = @_;
     my $self = $class->$new(@args);
-    my $coercion = MooseX::Parameterizable::Meta::TypeCoercion::Parameterizable->new(type_constraint => $self);
+    my $coercion = MooseX::Meta::TypeCoercion::Parameterizable->new(type_constraint => $self);
     $self->coercion($coercion);    
     return $self;
 };

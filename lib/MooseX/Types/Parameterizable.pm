@@ -1,4 +1,4 @@
-package MooseX::Parameterizable::Types;
+package MooseX::Types::Parameterizable;
 
 use 5.008;
 
@@ -6,18 +6,18 @@ our $VERSION   = '0.01';
 $VERSION = eval $VERSION;
 
 use Moose::Util::TypeConstraints;
-use MooseX::Parameterizable::Meta::TypeConstraint::Parameterizable;
+use MooseX::Meta::TypeConstraint::Parameterizable;
 use MooseX::Types -declare => [qw(Parameterizable)];
 
 =head1 NAME
 
-MooseX::Parameterizable::Types - Create your own Parameterizable Types.
+MooseX::Types::Parameterizable - Create your own Parameterizable Types.
 
 =head1 SYNOPSIS
 
 Within your L<MooseX::Types> declared library module:
 
-    use MooseX::Parameterizable::Types qw(Parameterizable);
+    use MooseX::Types::Parameterizable qw(Parameterizable);
 	
 	subtype Set,
 		as class_type("Set::Scalar");
@@ -267,8 +267,8 @@ will cause an exception.
 =cut
 
 Moose::Util::TypeConstraints::get_type_constraint_registry->add_type_constraint(
-    MooseX::Parameterizable::Meta::TypeConstraint::Parameterizable->new(
-        name => 'MooseX::Parameterizable::Types::Parameterizable',
+    MooseX::Meta::TypeConstraint::Parameterizable->new(
+        name => 'MooseX::Types::Parameterizable::Parameterizable',
         parent => find_type_constraint('Any'),
 		constraint => sub {1},
     )

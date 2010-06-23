@@ -4,7 +4,7 @@ use Test::More tests=>79; {
 	use strict;
 	use warnings;
 	
-	use MooseX::Parameterizable::Types qw(Parameterizable);
+	use MooseX::Types::Parameterizable qw(Parameterizable);
 	use MooseX::Types::Moose qw(Int Any Maybe);
 	use Moose::Util::TypeConstraints;
 	
@@ -21,11 +21,11 @@ use Test::More tests=>79; {
 	is Parameterizable->parent, 'Any',
 	  'Parameterizable is an Any';
 	  
-	is Parameterizable->name, 'MooseX::Parameterizable::Types::Parameterizable',
+	is Parameterizable->name, 'MooseX::Types::Parameterizable::Parameterizable',
 	  'Parameterizable has expected name';
 	  
 	like Parameterizable->get_message,
-	  qr/Validation failed for 'MooseX::Parameterizable::Types::Parameterizable' with value undef/,
+	  qr/Validation failed for 'MooseX::Types::Parameterizable::Parameterizable' with value undef/,
 	  'Got Expected Message';
 	  
 	ok Parameterizable->equals(Parameterizable),
@@ -53,7 +53,7 @@ use Test::More tests=>79; {
 	is SubParameterizable->validate(1), undef,
 	  'validate returned no error message';
 
-	is SubParameterizable->parent, 'MooseX::Parameterizable::Types::Parameterizable',
+	is SubParameterizable->parent, 'MooseX::Types::Parameterizable::Parameterizable',
 	  'SubParameterizable is a Parameterizable';
 	  
 	is SubParameterizable->name, 'main::SubParameterizable',
@@ -134,7 +134,7 @@ use Test::More tests=>79; {
 	is IntLessThan->name, 'main::IntLessThan',
 	  'Got correct name for IntLessThan';
 	
-	is IntLessThan->parent, 'MooseX::Parameterizable::Types::Parameterizable[main::EvenInt, Maybe[Int]]',
+	is IntLessThan->parent, 'MooseX::Types::Parameterizable::Parameterizable[main::EvenInt, Maybe[Int]]',
 	  'IntLessThan is a Parameterizable';
 	  
 	is IntLessThan->parent_type_constraint, EvenInt,

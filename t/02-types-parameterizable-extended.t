@@ -15,7 +15,7 @@ use Test::More; {
 	}
 
 	use MooseX::Types::Structured qw(Tuple Dict slurpy);
-	use MooseX::Parameterizable::Types qw(Parameterizable);
+	use MooseX::Types::Parameterizable qw(Parameterizable);
 	use MooseX::Types::Moose qw(Int Str);
 	use Moose::Util::TypeConstraints;
 	

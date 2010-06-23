@@ -3,11 +3,9 @@ use strict;
 use warnings;
 use inc::Module::Install 1.00;
 
-name 'MooseX-Parameterizable-Types';
-all_from 'lib/MooseX/Parameterizable/Types.pm';
+name 'MooseX-Types-Parameterizable';
+all_from 'lib/MooseX/Types/Parameterizable.pm';
 author 'John Napiorkowski <jjnapiork@cpan.org>';
-## repository 'git://git.moose.perl.org/MooseX-Parameterizable.git'
-
 license 'perl';
 
 requires 'Moose' => '1.08';
