@@ -39,6 +39,7 @@ around 'add_type_coercions' => sub {
 
 ## These two are here until I can merge change upstream to Moose.  These are two
 ## very minor changes we can probably just put into Moose without breaking stuff
+
 sub coerce {
     my $self = shift @_;
     my $coderef = $self->_compiled_type_coercion;
@@ -51,7 +52,10 @@ sub compile_type_coercion {
     my @coercions;
     while (@coercion_map) {
         my ($constraint_name, $action) = splice(@coercion_map, 0, 2);
-        my $type_constraint = ref $constraint_name ? $constraint_name : Moose::Util::TypeConstraints::find_or_parse_type_constraint($constraint_name);
+
+        my $type_constraint = ref $constraint_name 
+                            ? $constraint_name 
+                            : Moose::Util::TypeConstraints::find_or_parse_type_constraint($constraint_name);
 
         unless ( defined $type_constraint ) {
             require Moose;

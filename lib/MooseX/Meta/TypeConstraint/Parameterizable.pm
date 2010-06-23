@@ -76,15 +76,15 @@ has 'constraining_value' => (
 
 This class defines the following methods.
 
-=head2 BUILD
+=head2 new
 
 Do some post build stuff
 
 =cut
 
 ## Right now I add in the parameterizable type coercion until I can merge some Moose
-## changes upstream.  TODO change to BUILD or something
-
+## changes upstream.
+ 
 around 'new' => sub {
     my ($new, $class, @args) = @_;
     my $self = $class->$new(@args);
@@ -396,6 +396,5 @@ it under the same terms as Perl itself.
 
 =cut
 
-1;
-##__PACKAGE__->meta->make_immutable(inline_constructor => 0);
+__PACKAGE__->meta->make_immutable(inline_constructor => 0);
 
