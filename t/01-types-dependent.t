@@ -24,8 +24,8 @@ use Test::More tests=>79; {
 	is Dependent->name, 'MooseX::Dependent::Types::Dependent',
 	  'Dependent has expected name';
 	  
-	is Dependent->get_message,
-	  "Validation failed for 'MooseX::Dependent::Types::Dependent' failed with value undef",
+	like Dependent->get_message,
+	  qr/Validation failed for 'MooseX::Dependent::Types::Dependent' with value undef/,
 	  'Got Expected Message';
 	  
 	ok Dependent->equals(Dependent),
@@ -59,8 +59,8 @@ use Test::More tests=>79; {
 	is SubDependent->name, 'main::SubDependent',
 	  'Dependent has expected name';
 	  
-	is SubDependent->get_message,
-	  "Validation failed for 'main::SubDependent' failed with value undef",
+	like SubDependent->get_message,
+	  qr/Validation failed for 'main::SubDependent' with value undef/,
 	  'Got Expected Message';
 	  
 	ok SubDependent->equals(SubDependent),
@@ -105,8 +105,8 @@ use Test::More tests=>79; {
 	ok !IntLessThan->check('aaa'),
 	  '"aaa" is not an integer';
 	  
-	is IntLessThan->validate('aaa'),
-	  "Validation failed for 'main::EvenInt' failed with value aaa",
+	like IntLessThan->validate('aaa'),
+	  qr/Validation failed for 'main::EvenInt' with value aaa/,
 	  'Got expected error messge for "aaa"';
 	  
 	ok !IntLessThan->check(1),
@@ -127,8 +127,8 @@ use Test::More tests=>79; {
 	ok IntLessThan->check(10),
 	  '10 greater than 5 (and even)';
 	  
-	is IntLessThan->validate(1),
-	  "Validation failed for 'main::EvenInt' failed with value 1",
+	like IntLessThan->validate(1),
+	  qr/Validation failed for 'main::EvenInt' with value 1/,
 	  'error message is correct';
 	  
 	is IntLessThan->name, 'main::IntLessThan',
@@ -274,7 +274,7 @@ use Test::More tests=>79; {
 	CHECKPARAM: {
 		eval { GreatThen5andEvenIntNot54or64([54])->check(32) };
 		like $@,
-		  qr/Validation failed for 'main::IntNot54' failed with value 54/,
+		  qr/Validation failed for 'main::IntNot54' with value 54/,
 		  'Got Expected Error';	
 	}
 
