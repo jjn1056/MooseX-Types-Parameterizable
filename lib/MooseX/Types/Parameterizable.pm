@@ -20,7 +20,7 @@ Within your L<MooseX::Types> declared library module:
     use MooseX::Types::Parameterizable qw(Parameterizable);
     
     subtype Set,
-    	as class_type("Set::Scalar");
+        as class_type("Set::Scalar");
 
     subtype UniqueInt,
         as Parameterizable[Int, Set],
@@ -28,14 +28,14 @@ Within your L<MooseX::Types> declared library module:
             my ($int, $set) = @_;
             return !$set->has($int);
         };
-    	
+        
     subtype PositiveSet,
-    	as Set,
-    	where {
-    		my ($set) = @_;
-    		return !grep {$_ <0 } $set->members;
-    	};
-    	
+        as Set,
+        where {
+            my ($set) = @_;
+            return !grep {$_ <0 } $set->members;
+        };
+        
     subtype PositiveUniqueInt,
         as UniqueInt[PositiveSet];
     
@@ -52,7 +52,7 @@ Within your L<MooseX::Types> declared library module:
     my $negative_set = Set::Scalar->new(-1,-2,-3);
     
     UniqueInt([$negative_set])->check(100);  ## Throws exception
-    	
+        
 =head1 DESCRIPTION
 
 A L<MooseX::Types> library for creating parameterizable types.  A parameterizable type
@@ -65,20 +65,20 @@ set of numbers within which another number must be unique, or allowable ranges
 for a integer, such as in:
 
     subtype Range,
-    	as Dict[max=>Int, min=>Int],
-    	where {
-    		my ($range) = @_;
-    		return $range->{max} > $range->{min};
-    	};
+        as Dict[max=>Int, min=>Int],
+        where {
+            my ($range) = @_;
+            return $range->{max} > $range->{min};
+        };
 
     subtype RangedInt,
-    	as Parameterizable[Int, Range],
-    	where {
-    		my ($value, $range) = @_;
-    		return ($value >= $range->{min} &&
-    		 $value <= $range->{max});
-    	};
-    	
+        as Parameterizable[Int, Range],
+        where {
+            my ($value, $range) = @_;
+            return ($value >= $range->{min} &&
+             $value <= $range->{max});
+        };
+        
     RangedInt([{min=>10,max=>100}])->check(50); ## OK
     RangedInt([{min=>50, max=>75}])->check(99); ## Not OK, 99 exceeds max
     
@@ -92,9 +92,9 @@ values first, as in:
 
     my $range = {min=>99, max=>10};
     if(my $err = Range->validate($range)) {
-    	## Handle #$err
+        ## Handle #$err
     } else {
-    	RangedInt($range)->check(99);
+        RangedInt($range)->check(99);
     }
     
 Please note that for ArrayRef or HashRef parameterizable type constraints, as in the
@@ -125,38 +125,38 @@ required type parameter type constraint, or if re-parameterizing, the new
 type constraints are a subtype of the parent.  For example:
 
     subtype RangedInt,
-    	as Parameterizable[Int, Range],
-    	where {
-    		my ($value, $range) = @_;
-    		return ($value >= $range->{min} &&
-    		 $value =< $range->{max});
-    	};
+        as Parameterizable[Int, Range],
+        where {
+            my ($value, $range) = @_;
+            return ($value >= $range->{min} &&
+             $value =< $range->{max});
+        };
 
 Example subtype with additional constraints:
 
     subtype PositiveRangedInt,
-    	as RangedInt,
-    	where {
-    		shift >= 0;  			
-    	};
-    	
+        as RangedInt,
+        where {
+            shift >= 0;              
+        };
+        
 Or you could have done the following instead:
 
     ## Subtype of Int for positive numbers
     subtype PositiveInt,
-    	as Int,
-    	where {
-    		my ($value, $range) = @_;
-    		return $value >= 0;
-    	};
+        as Int,
+        where {
+            my ($value, $range) = @_;
+            return $value >= 0;
+        };
 
     ## subtype Range to re-parameterize Range with subtypes
     subtype PositiveRange,
-    	as Range[max=>PositiveInt, min=>PositiveInt];
+        as Range[max=>PositiveInt, min=>PositiveInt];
     
     ## create subtype via reparameterizing
     subtype PositiveRangedInt,
-    	as RangedInt[PositiveRange];
+        as RangedInt[PositiveRange];
 
 Notice how re-parameterizing the parameterizable type 'RangedInt' works slightly
 differently from re-parameterizing 'PositiveRange'  Although it initially takes
@@ -168,14 +168,14 @@ constraint of 'RangedInt' would have a parent of 'Int', not 'Parameterizable' an
 all intends and uses you could stick it wherever you'd need an Int.
 
     subtype NameAge,
-    	as Tuple[Str, Int];
+        as Tuple[Str, Int];
     
-    ## re-parameterized subtypes of NameAge containing a Parameterizable Int	
+    ## re-parameterized subtypes of NameAge containing a Parameterizable Int    
     subtype NameBetween18and35Age,
-    	as NameAge[
-    		Str,
-    		PositiveRangedInt[min=>18,max=>35],
-    	];
+        as NameAge[
+            Str,
+            PositiveRangedInt[min=>18,max=>35],
+        ];
 
 One caveat is that you can't stick an unparameterized parameterizable type inside a
 structure, such as L<MooseX::Types::Structured> since that would require the
@@ -195,8 +195,8 @@ create a Parameterizable type like:
     subtype PersonOverAge,
       as Parameterizable[Person, RequiredAgeInYears]
       where {
-    	my ($person, $required_years_old) = @_;
-    	return $person->years_old > $required_years_old;
+        my ($person, $required_years_old) = @_;
+        return $person->years_old > $required_years_old;
       }
 
 This would validate the following:
@@ -233,18 +233,18 @@ it is available to the constraint.
 
     ## Create a type constraint where a Person must be in the set
     subtype PersonInSet,
-    	as Parameterizable[Person, PersonSet],
-    	where {
-    		my ($person, $person_set) = @_;
-    		$person_set->find($person);
-    	}
+        as Parameterizable[Person, PersonSet],
+        where {
+            my ($person, $person_set) = @_;
+            $person_set->find($person);
+        }
 
     coerce PersonInSet,
-    	from HashRef,
-    	via {
-    		my ($hashref, $person_set) = @_;
-    		return $person_set->create($hash_ref);
-    	};
+        from HashRef,
+        via {
+            my ($hashref, $person_set) = @_;
+            return $person_set->create($hash_ref);
+        };
 
 =head2 Recursion
 
@@ -270,7 +270,7 @@ Moose::Util::TypeConstraints::get_type_constraint_registry->add_type_constraint(
     MooseX::Meta::TypeConstraint::Parameterizable->new(
         name => 'MooseX::Types::Parameterizable::Parameterizable',
         parent => find_type_constraint('Any'),
-    	constraint => sub {1},
+        constraint => sub {1},
     )
 );
 
