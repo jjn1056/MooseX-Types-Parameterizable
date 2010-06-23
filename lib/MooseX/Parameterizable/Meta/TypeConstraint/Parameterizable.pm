@@ -1,9 +1,9 @@
 package ## Hide from PAUSE
- MooseX::Dependent::Meta::TypeConstraint::Dependent;
+ MooseX::Parameterizable::Meta::TypeConstraint::Parameterizable;
 
 use Moose;
 use Moose::Util::TypeConstraints ();
-use MooseX::Dependent::Meta::TypeCoercion::Dependent;
+use MooseX::Parameterizable::Meta::TypeCoercion::Parameterizable;
 use Scalar::Util qw(blessed);
 use Data::Dump;
 use Digest::MD5;
@@ -12,13 +12,13 @@ extends 'Moose::Meta::TypeConstraint';
 
 =head1 NAME
 
-MooseX::Dependent::Meta::TypeConstraint::Dependent - Metaclass for Dependent type constraints.
+MooseX::Parameterizable::Meta::TypeConstraint::Parameterizable - Metaclass for Parameterizable type constraints.
 
 =head1 DESCRIPTION
 
-see L<MooseX::Dependent> for examples and details of how to use dependent
+see L<MooseX::Parameterizable> for examples and details of how to use parameterizable
 types.  This class is a subclass of L<Moose::Meta::TypeConstraint> which
-provides the gut functionality to enable dependent type constraints.
+provides the gut functionality to enable parameterizable type constraints.
 
 This class is not intended for public consumption.  Please don't subclass it
 or rely on it.  Chances are high stuff here is going to change a lot.  For
@@ -31,7 +31,7 @@ This class defines the following attributes.
 
 =head2 parent_type_constraint
 
-The type constraint whose validity is being made dependent.
+The type constraint whose validity is being made parameterizable.
 
 =cut
 
@@ -48,7 +48,7 @@ has 'parent_type_constraint' => (
 =head2 constraining_value_type_constraint
 
 This is a type constraint which defines what kind of value is allowed to be the
-constraining value of the dependent type.
+constraining value of the parameterizable type.
 
 =cut
 
@@ -82,13 +82,13 @@ Do some post build stuff
 
 =cut
 
-## Right now I add in the dependent type coercion until I can merge some Moose
+## Right now I add in the parameterizable type coercion until I can merge some Moose
 ## changes upstream
 
 around 'new' => sub {
     my ($new, $class, @args) = @_;
     my $self = $class->$new(@args);
-    my $coercion = MooseX::Dependent::Meta::TypeCoercion::Dependent->new(type_constraint => $self);
+    my $coercion = MooseX::Parameterizable::Meta::TypeCoercion::Parameterizable->new(type_constraint => $self);
     $self->coercion($coercion);    
     return $self;
 };
@@ -207,7 +207,7 @@ sub parameterize {
 
 =head2 _generate_subtype_name
 
-Returns a name for the dependent type that should be unique
+Returns a name for the parameterizable type that should be unique
 
 =cut
 
@@ -240,9 +240,9 @@ around 'create_child_type' => sub {
 
 =head2 equals ($type_constraint)
 
-Override the base class behavior so that a dependent type equal both the parent
-type and the overall dependent container.  This behavior may change if we can
-figure out what a dependent type is (multiply inheritance or a role...)
+Override the base class behavior so that a parameterizable type equal both the parent
+type and the overall parameterizable container.  This behavior may change if we can
+figure out what a parameterizable type is (multiply inheritance or a role...)
 
 =cut
 
@@ -266,8 +266,8 @@ around 'equals' => sub {
 
 =head2 is_subtype_of
 
-Method modifier to make sure we match on subtype for both the dependent type
-as well as the type being made dependent
+Method modifier to make sure we match on subtype for both the parameterizable type
+as well as the type being made parameterizable
 
 =cut
 

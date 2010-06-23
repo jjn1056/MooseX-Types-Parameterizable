@@ -1,12 +1,12 @@
 package ## Hide from PAUSE
- MooseX::Dependent::Meta::TypeCoercion::Dependent;
+ MooseX::Parameterizable::Meta::TypeCoercion::Parameterizable;
 
 use Moose;
 extends 'Moose::Meta::TypeCoercion';
 
 =head1 NAME
 
-MooseX::Meta::TypeCoercion::Dependent - Coerce Dependent type constraints.
+MooseX::Meta::TypeCoercion::Parameterizable - Coerce Parameterizable type constraints.
 
 =head1 DESCRIPTION
 
@@ -20,9 +20,9 @@ This class defines the following methods.
 =head add_type_coercions
 
 method modification to throw exception should we try to add a coercion on a
-dependent type that is already defined by a constraining value.  We do this
-since defined dependent type constraints inherit their coercion from the parent
-constraint.  It makes no sense to even be using dependent types if you know the
+parameterizable type that is already defined by a constraining value.  We do this
+since defined parameterizable type constraints inherit their coercion from the parent
+constraint.  It makes no sense to even be using parameterizable types if you know the
 constraining value beforehand!
 
 =cut
@@ -30,7 +30,7 @@ constraining value beforehand!
 around 'add_type_coercions' => sub {
     my ($add_type_coercions, $self, @args) = @_;
     if($self->type_constraint->has_constraining_value) {
-        Moose->throw_error("Cannot add type coercions to a dependent type constraint that's been defined.");
+        Moose->throw_error("Cannot add type coercions to a parameterizable type constraint that's been defined.");
     } else {
         return $self->$add_type_coercions(@args);
     }

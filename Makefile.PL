@@ -3,10 +3,10 @@ use strict;
 use warnings;
 use inc::Module::Install 1.00;
 
-name 'MooseX-Dependent';
-all_from 'lib/MooseX/Dependent.pm';
+name 'MooseX-Parameterizable-Types';
+all_from 'lib/MooseX/Parameterizable/Types.pm';
 author 'John Napiorkowski <jjnapiork@cpan.org>';
-repository 'git://git.moose.perl.org/MooseX-Dependent.git'
+## repository 'git://git.moose.perl.org/MooseX-Parameterizable.git'
 
 license 'perl';
 

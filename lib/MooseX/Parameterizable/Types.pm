@@ -1,24 +1,29 @@
-package MooseX::Dependent::Types;
+package MooseX::Parameterizable::Types;
+
+use 5.008;
+
+our $VERSION   = '0.01';
+$VERSION = eval $VERSION;
 
 use Moose::Util::TypeConstraints;
-use MooseX::Dependent::Meta::TypeConstraint::Dependent;
-use MooseX::Types -declare => [qw(Dependent)];
+use MooseX::Parameterizable::Meta::TypeConstraint::Parameterizable;
+use MooseX::Types -declare => [qw(Parameterizable)];
 
 =head1 NAME
 
-MooseX::Dependent::Types - L<MooseX::Types> constraints that depend on values.
+MooseX::Parameterizable::Types - Create your own Parameterizable Types.
 
 =head1 SYNOPSIS
 
 Within your L<MooseX::Types> declared library module:
 
-    use MooseX::Dependent::Types qw(Dependent);
+    use MooseX::Parameterizable::Types qw(Parameterizable);
 	
 	subtype Set,
 		as class_type("Set::Scalar");
 
     subtype UniqueInt,
-        as Dependent[Int, Set],
+        as Parameterizable[Int, Set],
         where {
             my ($int, $set) = @_;
             return !$set->has($int);
@@ -50,7 +55,7 @@ Within your L<MooseX::Types> declared library module:
 		
 =head1 DESCRIPTION
 
-A L<MooseX::Types> library for creating dependent types.  A dependent type
+A L<MooseX::Types> library for creating parameterizable types.  A parameterizable type
 constraint for all intents and uses is a subclass of a parent type, but adds a
 secondary type parameter which is available to constraint callbacks (such as
 inside the 'where' clause) or in the coercions.
@@ -67,7 +72,7 @@ for a integer, such as in:
 		};
 
 	subtype RangedInt,
-		as Dependent[Int, Range],
+		as Parameterizable[Int, Range],
 		where {
 			my ($value, $range) = @_;
 			return ($value >= $range->{min} &&
@@ -92,7 +97,7 @@ values first, as in:
 		RangedInt($range)->check(99);
 	}
 	
-Please note that for ArrayRef or HashRef dependent type constraints, as in the
+Please note that for ArrayRef or HashRef parameterizable type constraints, as in the
 example above, as a convenience we automatically ref the incoming type
 parameters, so that the above could also be written as:
 
@@ -113,14 +118,14 @@ parameters.  This seems to have something to do with the precendent level of
 "->".  Patches or thoughts welcomed.  You only need to do this in the above
 case which I imagine is not a very common case.
 
-==head2 Subtyping a Dependent type constraints
+==head2 Subtyping a Parameterizable type constraints
 
-When subclassing a dependent type you must be careful to match either the
+When subclassing a parameterizable type you must be careful to match either the
 required type parameter type constraint, or if re-parameterizing, the new
 type constraints are a subtype of the parent.  For example:
 
 	subtype RangedInt,
-		as Dependent[Int, Range],
+		as Parameterizable[Int, Range],
 		where {
 			my ($value, $range) = @_;
 			return ($value >= $range->{min} &&
@@ -153,42 +158,42 @@ Or you could have done the following instead:
 	subtype PositiveRangedInt,
 		as RangedInt[PositiveRange];
 
-Notice how re-parameterizing the dependent type 'RangedInt' works slightly
+Notice how re-parameterizing the parameterizable type 'RangedInt' works slightly
 differently from re-parameterizing 'PositiveRange'  Although it initially takes
-two type constraint values to declare a dependent type, should you wish to
+two type constraint values to declare a parameterizable type, should you wish to
 later re-parameterize it, you only use a subtype of the second type parameter
-(the dependent type constraint) since the first type constraint sets the parent
-type for the dependent type.  In other words, given the example above, a type
-constraint of 'RangedInt' would have a parent of 'Int', not 'Dependent' and for
+(the parameterizable type constraint) since the first type constraint sets the parent
+type for the parameterizable type.  In other words, given the example above, a type
+constraint of 'RangedInt' would have a parent of 'Int', not 'Parameterizable' and for
 all intends and uses you could stick it wherever you'd need an Int.
 
 	subtype NameAge,
 		as Tuple[Str, Int];
 	
-	## re-parameterized subtypes of NameAge containing a Dependent Int	
+	## re-parameterized subtypes of NameAge containing a Parameterizable Int	
 	subtype NameBetween18and35Age,
 		as NameAge[
 			Str,
 			PositiveRangedInt[min=>18,max=>35],
 		];
 
-One caveat is that you can't stick an unparameterized dependent type inside a
+One caveat is that you can't stick an unparameterized parameterizable type inside a
 structure, such as L<MooseX::Types::Structured> since that would require the
-ability to convert a 'containing' type constraint into a dependent type, which
+ability to convert a 'containing' type constraint into a parameterizable type, which
 is a capacity we current don't have.
 	
 =head2 Coercions
 
-Dependent types have some limited support for coercions.  Several things must
+Parameterizable types have some limited support for coercions.  Several things must
 be kept in mind.  The first is that the coercion targets the type constraint
-which is being made dependent, Not the dependent type.  So for example if you
-create a Dependent type like:
+which is being made parameterizable, Not the parameterizable type.  So for example if you
+create a Parameterizable type like:
 
 	subtype RequiredAgeInYears,
 	  as Int;
 
 	subtype PersonOverAge,
-	  as Dependent[Person, RequiredAgeInYears]
+	  as Parameterizable[Person, RequiredAgeInYears]
 	  where {
 		my ($person, $required_years_old) = @_;
 		return $person->years_old > $required_years_old;
@@ -212,7 +217,7 @@ This coercion would then apply to all the following:
 	PersonOverAge([18])->check(30); ## via the Int coercion
 	PersonOverAge([18])->check({age=>50}); ## via the Dict coercion
 
-However, you are not allowed to place coercions on dependent types that have
+However, you are not allowed to place coercions on parameterizable types that have
 had their constraining value filled, nor subtypes of such.  For example:
 
 	coerce PersonOverAge[18],
@@ -228,7 +233,7 @@ it is available to the constraint.
 
 	## Create a type constraint where a Person must be in the set
 	subtype PersonInSet,
-		as Dependent[Person, PersonSet],
+		as Parameterizable[Person, PersonSet],
 		where {
 			my ($person, $person_set) = @_;
 			$person_set->find($person);
@@ -249,10 +254,10 @@ it is available to the constraint.
 
 This type library defines the following constraints.
 
-=head2 Dependent[ParentTypeConstraint, DependentValueTypeConstraint]
+=head2 Parameterizable[ParentTypeConstraint, ParameterizableValueTypeConstraint]
 
 Create a subtype of ParentTypeConstraint with a dependency on a value that can
-pass the DependentValueTypeConstraint. If DependentValueTypeConstraint is empty
+pass the ParameterizableValueTypeConstraint. If ParameterizableValueTypeConstraint is empty
 we default to the 'Any' type constraint (see L<Moose::Util::TypeConstraints>).
 
 This creates a type constraint which must be further parameterized at later time
@@ -262,8 +267,8 @@ will cause an exception.
 =cut
 
 Moose::Util::TypeConstraints::get_type_constraint_registry->add_type_constraint(
-    MooseX::Dependent::Meta::TypeConstraint::Dependent->new(
-        name => 'MooseX::Dependent::Types::Dependent',
+    MooseX::Parameterizable::Meta::TypeConstraint::Parameterizable->new(
+        name => 'MooseX::Parameterizable::Types::Parameterizable',
         parent => find_type_constraint('Any'),
 		constraint => sub {1},
     )

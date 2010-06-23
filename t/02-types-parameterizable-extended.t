@@ -15,7 +15,7 @@ use Test::More; {
 	}
 
 	use MooseX::Types::Structured qw(Tuple Dict slurpy);
-	use MooseX::Dependent::Types qw(Dependent);
+	use MooseX::Parameterizable::Types qw(Parameterizable);
 	use MooseX::Types::Moose qw(Int Str);
 	use Moose::Util::TypeConstraints;
 	
@@ -28,11 +28,11 @@ use Test::More; {
 	ok subtype( Set, as "Set::Scalar"), 'Created Set subtype';
 	
 	ok subtype( UniqueInt,
-		as Dependent[Int, Set],
+		as Parameterizable[Int, Set],
 		where {
 		    my ($int, $set) = @_;
 		    return !$set->has($int);
-		}), 'Created UniqueInt Dependent Type';
+		}), 'Created UniqueInt Parameterizable Type';
 	
 	ok( (my $set_obj = Set::Scalar->new(1,2,3,4,5)), 'Create Set Object');
 	
@@ -68,7 +68,7 @@ use Test::More; {
 		};
 
 	subtype RangedInt,
-		as Dependent[Int, Range],
+		as Parameterizable[Int, Range],
 		where {
 			my ($value, $range) = @_;
 			return ($value >= $range->{min} &&

@@ -4,82 +4,82 @@ use Test::More tests=>79; {
 	use strict;
 	use warnings;
 	
-	use MooseX::Dependent::Types qw(Dependent);
+	use MooseX::Parameterizable::Types qw(Parameterizable);
 	use MooseX::Types::Moose qw(Int Any Maybe);
 	use Moose::Util::TypeConstraints;
 	
-	use MooseX::Types -declare=>[qw(SubDependent IntLessThan EvenInt
+	use MooseX::Types -declare=>[qw(SubParameterizable IntLessThan EvenInt
 		LessThan100GreatThen5andEvenIntNot44 IntNot54
 		GreatThen5andEvenIntNot54or64)];
 	
-	ok Dependent->check(1),
-	  'Dependent is basically an "Any"';
+	ok Parameterizable->check(1),
+	  'Parameterizable is basically an "Any"';
 	  
-	is Dependent->validate(1), undef,
+	is Parameterizable->validate(1), undef,
 	  'No Error Message';
 	  
-	is Dependent->parent, 'Any',
-	  'Dependent is an Any';
+	is Parameterizable->parent, 'Any',
+	  'Parameterizable is an Any';
 	  
-	is Dependent->name, 'MooseX::Dependent::Types::Dependent',
-	  'Dependent has expected name';
+	is Parameterizable->name, 'MooseX::Parameterizable::Types::Parameterizable',
+	  'Parameterizable has expected name';
 	  
-	like Dependent->get_message,
-	  qr/Validation failed for 'MooseX::Dependent::Types::Dependent' with value undef/,
+	like Parameterizable->get_message,
+	  qr/Validation failed for 'MooseX::Parameterizable::Types::Parameterizable' with value undef/,
 	  'Got Expected Message';
 	  
-	ok Dependent->equals(Dependent),
-	  'Dependent equal Dependent';
+	ok Parameterizable->equals(Parameterizable),
+	  'Parameterizable equal Parameterizable';
 	  
-	ok Dependent->is_a_type_of(Dependent),
-	  'Dependent is_a_type_of Dependent';
+	ok Parameterizable->is_a_type_of(Parameterizable),
+	  'Parameterizable is_a_type_of Parameterizable';
 	  
-	ok Dependent->is_a_type_of('Any'),
-	  'Dependent is_a_type_of Any';
+	ok Parameterizable->is_a_type_of('Any'),
+	  'Parameterizable is_a_type_of Any';
 	  
-	ok Dependent->is_subtype_of('Any'),
-	  'Dependent is_subtype_of Dependent';
+	ok Parameterizable->is_subtype_of('Any'),
+	  'Parameterizable is_subtype_of Parameterizable';
 
-	is Dependent->parent_type_constraint, 'Any',
+	is Parameterizable->parent_type_constraint, 'Any',
 	  'Correct parent type';
 
-	is subtype( SubDependent, as Dependent ),
-	  'main::SubDependent',
+	is subtype( SubParameterizable, as Parameterizable ),
+	  'main::SubParameterizable',
 	  'Create a useless subtype';
 
-	ok SubDependent->check(1),
-	  'SubDependent is basically an "Any"';
+	ok SubParameterizable->check(1),
+	  'SubParameterizable is basically an "Any"';
 	  
-	is SubDependent->validate(1), undef,
+	is SubParameterizable->validate(1), undef,
 	  'validate returned no error message';
 
-	is SubDependent->parent, 'MooseX::Dependent::Types::Dependent',
-	  'SubDependent is a Dependent';
+	is SubParameterizable->parent, 'MooseX::Parameterizable::Types::Parameterizable',
+	  'SubParameterizable is a Parameterizable';
 	  
-	is SubDependent->name, 'main::SubDependent',
-	  'Dependent has expected name';
+	is SubParameterizable->name, 'main::SubParameterizable',
+	  'Parameterizable has expected name';
 	  
-	like SubDependent->get_message,
-	  qr/Validation failed for 'main::SubDependent' with value undef/,
+	like SubParameterizable->get_message,
+	  qr/Validation failed for 'main::SubParameterizable' with value undef/,
 	  'Got Expected Message';
 	  
-	ok SubDependent->equals(SubDependent),
-	  'SubDependent equal SubDependent';
+	ok SubParameterizable->equals(SubParameterizable),
+	  'SubParameterizable equal SubParameterizable';
 	  
-	ok !SubDependent->equals(Dependent),
-	  'SubDependent does not equal Dependent';
+	ok !SubParameterizable->equals(Parameterizable),
+	  'SubParameterizable does not equal Parameterizable';
 	  
-	ok SubDependent->is_a_type_of(Dependent),
-	  'SubDependent is_a_type_of Dependent';
+	ok SubParameterizable->is_a_type_of(Parameterizable),
+	  'SubParameterizable is_a_type_of Parameterizable';
 	  
-	ok SubDependent->is_a_type_of(Any),
-	  'SubDependent is_a_type_of Any';
+	ok SubParameterizable->is_a_type_of(Any),
+	  'SubParameterizable is_a_type_of Any';
 	  
-	ok SubDependent->is_subtype_of('Any'),
-	  'SubDependent is_subtype_of Dependent';
+	ok SubParameterizable->is_subtype_of('Any'),
+	  'SubParameterizable is_subtype_of Parameterizable';
 	  
-	ok !SubDependent->is_subtype_of(SubDependent),
-	  'SubDependent is not is_subtype_of SubDependent';
+	ok !SubParameterizable->is_subtype_of(SubParameterizable),
+	  'SubParameterizable is not is_subtype_of SubParameterizable';
 	
 	ok subtype( EvenInt,
 		as Int,
@@ -94,7 +94,7 @@ use Test::More tests=>79; {
 	ok EvenInt->check(2), 'but 2 is!';
 	  
 	ok subtype( IntLessThan,
-		as Dependent[EvenInt, Maybe[Int]],
+		as Parameterizable[EvenInt, Maybe[Int]],
 		where {
 			my $value = shift @_;
 			my $constraining = shift @_ || 200;
@@ -134,8 +134,8 @@ use Test::More tests=>79; {
 	is IntLessThan->name, 'main::IntLessThan',
 	  'Got correct name for IntLessThan';
 	
-	is IntLessThan->parent, 'MooseX::Dependent::Types::Dependent[main::EvenInt, Maybe[Int]]',
-	  'IntLessThan is a Dependent';
+	is IntLessThan->parent, 'MooseX::Parameterizable::Types::Parameterizable[main::EvenInt, Maybe[Int]]',
+	  'IntLessThan is a Parameterizable';
 	  
 	is IntLessThan->parent_type_constraint, EvenInt,
 	  'Parent is an Int';
@@ -146,14 +146,14 @@ use Test::More tests=>79; {
 	ok IntLessThan->equals(IntLessThan),
 	  'IntLessThan equals IntLessThan';
 
-	ok IntLessThan->is_subtype_of(Dependent),
-	  'IntLessThan is_subtype_of Dependent';	  
+	ok IntLessThan->is_subtype_of(Parameterizable),
+	  'IntLessThan is_subtype_of Parameterizable';	  
 
 	ok IntLessThan->is_subtype_of(Int),
 	  'IntLessThan is_subtype_of Int';
 
-	ok IntLessThan->is_a_type_of(Dependent),
-	  'IntLessThan is_a_type_of Dependent';	  
+	ok IntLessThan->is_a_type_of(Parameterizable),
+	  'IntLessThan is_a_type_of Parameterizable';	  
 
 	ok IntLessThan->is_a_type_of(Int),
 	  'IntLessThan is_a_type_of Int';
@@ -277,8 +277,4 @@ use Test::More tests=>79; {
 		  qr/Validation failed for 'main::IntNot54' with value 54/,
 		  'Got Expected Error';	
 	}
-
-	#die IntLessThan->validate(100);
-	#use Data::Dump qw/dump/;
-	#warn dump IntLessThan;
 }

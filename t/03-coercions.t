@@ -4,7 +4,7 @@ use Test::More tests=>15; {
 	use strict;
 	use warnings;
 
-	use MooseX::Dependent::Types qw(Dependent);
+	use MooseX::Parameterizable::Types qw(Parameterizable);
 	use MooseX::Types::Moose qw(Int Str HashRef ArrayRef);
 	
 	use MooseX::Types -declare=>[qw(
@@ -22,7 +22,7 @@ use Test::More tests=>15; {
 	ok !InfoHash->check({at_least=>25}), 'Bad InfoHash';
 	
 	ok subtype( OlderThanAge,
-		as Dependent[Int, InfoHash],
+		as Parameterizable[Int, InfoHash],
 		where {
 			my ($value, $dict) = @_;
 			return $value > $dict->{older_than} ? 1:0;

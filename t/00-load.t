@@ -1,13 +1,9 @@
+use Test::More tests=>3;
 
-use Test::More tests=>4; {
-    
-    use strict;
-    use warnings;
-    
-    ## List all the modules we want to make sure can at least compile
-    use_ok 'MooseX::Dependent';
-    use_ok 'MooseX::Dependent::Types';
-    use_ok 'MooseX::Dependent::Meta::TypeConstraint::Dependent';
-    use_ok 'MooseX::Dependent::Meta::TypeCoercion::Dependent';
-}
+use strict;
+use warnings;
+
+use_ok 'MooseX::Parameterizable::Types';
+use_ok 'MooseX::Parameterizable::Meta::TypeConstraint::Parameterizable';
+use_ok 'MooseX::Parameterizable::Meta::TypeCoercion::Parameterizable';
 
