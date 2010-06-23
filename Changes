@@ -1,4 +1,6 @@
 Revision history for MooseX-Types-Parameterized
         
-0.01    29 March 2009
-        - Completed basic requirements, documentation and tests.:
+0.01    24 June 2010
+        - Completed basic requirements, documentation and tests.
+	- sending this out from YAPC::NA, while in a talk on extending
+	  Moose :)
