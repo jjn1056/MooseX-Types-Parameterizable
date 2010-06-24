@@ -40,7 +40,7 @@ use Test::More;
     Test::More::ok $varchar_ten->check( 'X' x 9 );
     Test::More::ok ! $varchar_ten->check( 'X' x 12 );
 
-    has varchar_five => (isa=>$varchar_five, is=>'ro', coerce=>1);
+    has varchar_five => (isa=>Varchar[5], is=>'ro', coerce=>1);
     has varchar_ten => (isa=>Varchar[10], is=>'ro');
   
     my $object1 = __PACKAGE__->new(
