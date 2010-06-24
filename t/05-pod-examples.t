@@ -57,6 +57,14 @@ use Test::More;
 
     Test::More::ok $@, 'There was an error';
     Test::More::like $@, qr('12345678' is too long), 'Correct custom error';
+
+    my $object3 = __PACKAGE__->new(
+        varchar_five => [qw/aa bb/],
+        varchar_ten => '123456789',
+    );
+
+    Test::More::is $object3->varchar_five, 'aabb',
+      'coercion as expected';
 }
 
 done_testing;

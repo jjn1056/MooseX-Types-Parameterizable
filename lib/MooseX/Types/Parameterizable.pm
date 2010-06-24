@@ -17,10 +17,16 @@ MooseX::Types::Parameterizable - Create your own Parameterizable Types.
 
 The follow is example usage.
 
+    package Test::MooseX::Types::Parameterizable::Synopsis;
+
     use Moose;
     use MooseX::Types::Parameterizable qw(Parameterizable);
-    use MooseX::Types::Moose qw(Str Int);
+    use MooseX::Types::Moose qw(Str Int ArrayRef);
     use MooseX::Types -declare=>[qw(Varchar)];
+
+    ## Create a type constraint that is a string but parameterizes an integer
+    ## that is used as a maximum length constraint on that string, similar to
+    ## an SQL Varchar type.
 
     subtype Varchar,
       as Parameterizable[Str,Int],
@@ -28,25 +34,36 @@ The follow is example usage.
         my($string, $int) = @_;
         $int >= length($string) ? 1:0;
       },
-      message {
-        "'$_' is too long"
+      message { "'$_' is too long"  };
+
+    coerce Varchar,
+      from ArrayRef,
+      via { 
+        my ($arrayref, $int) = @_;
+        join('', @$arrayref);
       };
 
-    has varchar_five => (isa=>Varchar[5], is=>'ro');
-    has varchar_ten => (isa=>Varchar[10], is=>'ro');
+    has 'varchar_five' => (isa=>Varchar[5], is=>'ro', coerce=>1);
+    has 'varchar_ten' => (isa=>Varchar[10], is=>'ro');
   
-    ## This works fine
+    ## Object created since attributes are valid
     my $object1 = __PACKAGE__->new(
         varchar_five => '1234',
         varchar_ten => '123456789',
     );
 
-    ## This explodes with a type constraint error
+    ## Dies with an invalid constraint for 'varchar_five'
     my $object2 = __PACKAGE__->new(
-        varchar_five => '12345678', ## Too long string
+        varchar_five => '12345678',
         varchar_ten => '123456789',
     );
 
+    ## varchar_five coerces as expected
+    my $object3 = __PACKAGE__->new(
+        varchar_five => [qw/aa bb/],
+        varchar_ten => '123456789',
+    );
+ 
 See t/05-pod-examples.t for runnable versions of all POD code
          
 =head1 DESCRIPTION
