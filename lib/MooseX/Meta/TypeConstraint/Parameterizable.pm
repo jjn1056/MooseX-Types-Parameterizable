@@ -95,7 +95,7 @@ around 'new' => sub {
 
 =head2 parameterize (@args)
 
-Given a ref of type constraints, create a structured type.
+Given a ref of type constraints, create a parameterized constraint
     
 =cut
 
