@@ -51,12 +51,12 @@ use Test::More; {
     CHECKHARDEXCEPTION: {
         eval { UniqueInt->check(1000) };
         like $@,
-          qr/Validation failed for 'main::Set' failed with value undef/,
+          qr/Validation failed for 'main::Set' with value undef/,
           'Got Expected Error';
           
         eval { UniqueInt->validate(1000) };
         like $@,
-          qr/Validation failed for 'main::Set' failed with value undef/,
+          qr/Validation failed for 'main::Set' with value undef/,
           'Got Expected Error';          
     }
     

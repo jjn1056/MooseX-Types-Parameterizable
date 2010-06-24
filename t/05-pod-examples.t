@@ -16,6 +16,10 @@ eval "use Set::Scalar"; if($@) {
     use MooseX::Types::Moose qw(Str Int);
     use MooseX::Types -declare=>[qw(Varchar)];
 
+    ## Create a type constraint that is a string but parameterizes an integer
+    ## that is used as a maximum length constraint on that string, similar to
+    ## an SQL Varchar type.
+
     subtype Varchar,
       as Parameterizable[Str,Int],
       where {
