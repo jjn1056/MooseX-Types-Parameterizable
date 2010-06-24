@@ -321,6 +321,19 @@ modify this method so that we pass along the constraining value to the constrain
 coderef and also throw the correct error message if the constraining value does
 not match it's requirement.
 
+around 'compile_type_constraint' => sub {
+    my ($compile_type_constraint, $self, @args) = @_;
+    
+    if($self->has_type_constraints) {
+        my $type_constraints = $self->type_constraints;
+        my $constraint = $self->generate_constraint_for($type_constraints);
+        $self->_set_constraint($constraint);        
+    }
+
+    return $self->$compile_type_constraint(@args);
+};
+
+
 =cut
 
 around '_compiled_type_constraint' => sub {
@@ -348,36 +361,22 @@ More method modification to support dispatch coerce to a parent.
 
 around 'coerce' => sub {
     my ($coerce, $self, @args) = @_;
-    
     if($self->has_constraining_value) {
         push @args, $self->constraining_value;
-        if(@{$self->coercion->type_coercion_map}) {
-            my $coercion = $self->coercion;
-            my $coerced = $self->$coerce(@args);
-            if(defined $coerced) {
-                return $coerced;
-            } else {
-                my $parent = $self->parent;
-                return $parent->coerce(@args); 
-            }
+    }
+    if(@{$self->coercion->type_coercion_map}) {
+        my $coercion = $self->coercion;
+        my $coerced = $coercion->coerce(@args);
+        if(defined $coerced) {
+            return $coerced;
         } else {
             my $parent = $self->parent;
             return $parent->coerce(@args); 
-        } 
-    }
-    else {
-        return $self->$coerce(@args);
-    }
-    return;
-};
-
-=head2 get_message
-
-Give you a better peek into what's causing the error.
-
-around 'get_message' => sub {
-    my ($get_message, $self, $value) = @_;
-    return $self->$get_message($value);
+        }
+    } else {
+        my $parent = $self->parent;
+        return $parent->coerce(@args); 
+    } 
 };
 
 =head1 SEE ALSO

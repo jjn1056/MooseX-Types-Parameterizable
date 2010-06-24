@@ -3,17 +3,12 @@ use warnings;
 
 use Test::More;
 
-eval "use Set::Scalar"; if($@) {
-    plan skip_all => 'Set::Scalar not installed';
-}
-
-
 {
     package Test::MooseX::Types::Parameterizable::Synopsis;
 
     use Moose;
     use MooseX::Types::Parameterizable qw(Parameterizable);
-    use MooseX::Types::Moose qw(Str Int);
+    use MooseX::Types::Moose qw(Str Int ArrayRef);
     use MooseX::Types -declare=>[qw(Varchar)];
 
     ## Create a type constraint that is a string but parameterizes an integer
@@ -28,6 +23,13 @@ eval "use Set::Scalar"; if($@) {
       },
       message { "'$_' is too long"  };
 
+    coerce Varchar,
+      from ArrayRef,
+      via { 
+        my ($arrayref, $int) = @_;
+        join('', @$arrayref);
+      };
+
     my $varchar_five = Varchar[5];
 
     Test::More::ok $varchar_five->check('four');
@@ -38,7 +40,7 @@ eval "use Set::Scalar"; if($@) {
     Test::More::ok $varchar_ten->check( 'X' x 9 );
     Test::More::ok ! $varchar_ten->check( 'X' x 12 );
 
-    has varchar_five => (isa=>Varchar[5], is=>'ro');
+    has varchar_five => (isa=>$varchar_five, is=>'ro', coerce=>1);
     has varchar_ten => (isa=>Varchar[10], is=>'ro');
   
     my $object1 = __PACKAGE__->new(
