@@ -17,7 +17,10 @@ MooseX::Types::Parameterizable - Create your own Parameterizable Types.
 
 Within your L<MooseX::Types> declared library module:
 
+    use Set::Scalar;
     use MooseX::Types::Parameterizable qw(Parameterizable);
+    use MooseX::Types::Moose qw(Int );
+    use MooseX::Types -declare=>[qw(Set UniqueInt PositiveSet)];
     
     subtype Set,
         as class_type("Set::Scalar");

@@ -195,6 +195,7 @@ sub parameterize {
                     constraining_value => $args,
                     parent_type_constraint=>$self->parent_type_constraint,
                     constraining_value_type_constraint => $self->constraining_value_type_constraint,
+                    message => $self->message,
                 );
                 
                 ## TODO This is probably going to have to go away (too many things added to the registry)
