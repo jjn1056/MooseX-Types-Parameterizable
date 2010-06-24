@@ -15,47 +15,40 @@ MooseX::Types::Parameterizable - Create your own Parameterizable Types.
 
 =head1 SYNOPSIS
 
-Within your L<MooseX::Types> declared library module:
+The follow is example usage.
 
-    use Set::Scalar;
+    use Moose;
     use MooseX::Types::Parameterizable qw(Parameterizable);
-    use MooseX::Types::Moose qw(Int );
-    use MooseX::Types -declare=>[qw(Set UniqueInt PositiveSet)];
-    
-    subtype Set,
-        as class_type("Set::Scalar");
+    use MooseX::Types::Moose qw(Str Int);
+    use MooseX::Types -declare=>[qw(Varchar)];
 
-    subtype UniqueInt,
-        as Parameterizable[Int, Set],
-        where {
-            my ($int, $set) = @_;
-            return !$set->has($int);
-        };
-        
-    subtype PositiveSet,
-        as Set,
-        where {
-            my ($set) = @_;
-            return !grep {$_ <0 } $set->members;
-        };
-        
-    subtype PositiveUniqueInt,
-        as UniqueInt[PositiveSet];
-    
-    my $set = Set::Scalar->new(1,2,3);
+    subtype Varchar,
+      as Parameterizable[Str,Int],
+      where {
+        my($string, $int) = @_;
+        $int >= length($string) ? 1:0;
+      },
+      message {
+        "'$_' is too long"
+      };
 
-    UniqueInt([$set])->check(100);  ## Okay, 100 isn't in (1,2,3)
-    UniqueInt([$set])->check(-99);  ## Okay, -99 isn't in (1,2,3)
-    UniqueInt([$set])->check(2);  ## Not OK, 2 is in (1,2,3)
-    
-    PositiveUniqueInt([$set])->check(100);  ## Okay, 100 isn't in (1,2,3)
-    PositiveUniqueInt([$set])->check(-99);  ## Not OK, -99 not Positive Int
-    PositiveUniqueInt([$set])->check(2);  ## Not OK, 2 is in (1,2,3)
-    
-    my $negative_set = Set::Scalar->new(-1,-2,-3);
-    
-    UniqueInt([$negative_set])->check(100);  ## Throws exception
-        
+    has varchar_five => (isa=>Varchar[5], is=>'ro');
+    has varchar_ten => (isa=>Varchar[10], is=>'ro');
+  
+    ## This works fine
+    my $object1 = __PACKAGE__->new(
+        varchar_five => '1234',
+        varchar_ten => '123456789',
+    );
+
+    ## This explodes with a type constraint error
+    my $object2 = __PACKAGE__->new(
+        varchar_five => '12345678', ## Too long string
+        varchar_ten => '123456789',
+    );
+
+See t/05-pod-examples.t for runnable versions of all POD code
+         
 =head1 DESCRIPTION
 
 A L<MooseX::Types> library for creating parameterizable types.  A parameterizable type
