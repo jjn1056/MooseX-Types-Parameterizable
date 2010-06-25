@@ -2,7 +2,7 @@ package MooseX::Types::Parameterizable;
 
 use 5.008;
 
-our $VERSION   = '0.02';
+our $VERSION   = '0.03';
 $VERSION = eval $VERSION;
 
 use Moose::Util::TypeConstraints;
@@ -24,9 +24,7 @@ The follow is example usage.
     use MooseX::Types::Moose qw(Str Int ArrayRef);
     use MooseX::Types -declare=>[qw(Varchar)];
 
-    ## Create a type constraint that is a string but parameterizes an integer
-    ## that is used as a maximum length constraint on that string, similar to
-    ## a SQL Varchar database type.
+Create a type constraint that is similar to SQL Varchar type.
 
     subtype Varchar,
       as Parameterizable[Str,Int],
@@ -36,7 +34,7 @@ The follow is example usage.
       },
       message { "'$_' is too long"  };
 
-    ## Coerce an ArrayRef to a string via concatenation.
+Coerce an ArrayRef to a string via concatenation.
 
     coerce Varchar,
       from ArrayRef,
@@ -48,19 +46,22 @@ The follow is example usage.
     has 'varchar_five' => (isa=>Varchar[5], is=>'ro', coerce=>1);
     has 'varchar_ten' => (isa=>Varchar[10], is=>'ro');
   
-    ## Object created since attributes are valid
+Object created since attributes are valid
+
     my $object1 = __PACKAGE__->new(
         varchar_five => '1234',
         varchar_ten => '123456789',
     );
 
-    ## Dies with an invalid constraint for 'varchar_five'
+Dies with an invalid constraint for 'varchar_five'
+
     my $object2 = __PACKAGE__->new(
         varchar_five => '12345678',  ## too long!
         varchar_ten => '123456789',
     );
 
-    ## varchar_five coerces as expected
+varchar_five coerces as expected
+
     my $object3 = __PACKAGE__->new(
         varchar_five => [qw/aa bb/],  ## coerces to "aabb"
         varchar_ten => '123456789',
@@ -101,7 +102,7 @@ values for an Int (integer) type constraint:
         };
         
     RangedInt([{min=>10,max=>100}])->check(50); ## OK
-    RangedInt([{min=>50, max=>75}])->check(99); ## Not OK, 99 exceeds max
+    RangedInt([{min=>50, max=>75}])->check(99); ## Not OK, exceeds max
 
 The type parameter must be valid against the type constraint given.  If you pass
 an invalid value this throws a hard Moose exception.  You'll need to capture it
@@ -125,8 +126,8 @@ example above, as a convenience we automatically ref the incoming type
 parameters, so that the above could also be written as:
 
     RangedInt([min=>10,max=>100])->check(50); ## OK
-    RangedInt([min=>50, max=>75])->check(99); ## Not OK, 99 exceeds max
-    RangedInt([min=>99, max=>10])->check(10); ## Exception, not a valid Range!
+    RangedInt([min=>50, max=>75])->check(99); ## Not OK, exceeds max
+    RangedInt([min=>99, max=>10])->check(10); ## Exception, not valid Range
 
 This is the preferred syntax, as it improve readability and adds to the
 conciseness of your type constraint declarations.  An exception wil be thrown if
@@ -141,7 +142,7 @@ parameters.  You can skip the wrapping parenthesis in the most common cases,
 such as when you use the type constraint in the options section of a L<Moose>
 attribute declaration, or when defining type libraries.
 
-==head2 Subtyping a Parameterizable type constraints
+=head2 Subtyping a Parameterizable type constraints
 
 When subclassing a parameterizable type you must be careful to match either the
 required type parameter type constraint, or if re-parameterizing, the new
@@ -291,7 +292,7 @@ how most L<Moose> authors expect type constraints to work.
 
 =head2 Recursion
 
-    TBD - Need more tests.
+    TBD - Needs a use case... Anyone?
 
 =head1 TYPE CONSTRAINTS
 

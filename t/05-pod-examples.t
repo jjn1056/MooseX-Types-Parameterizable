@@ -239,5 +239,16 @@ use Test::More;
     Test::More::is MySpecialVarchar([40])->coerce({a=>1, b=>2}), 'ab';
 }
 
+{
+    package Test::MooseX::Types::Parameterizable::Recursion;
+
+    use Moose;
+    use MooseX::Types::Parameterizable qw(Parameterizable);
+    use MooseX::Types::Moose qw(  );
+    use MooseX::Types -declare=>[qw(  )];
+
+    ## To be done when I can think of a use case
+}
+
 done_testing;
 
