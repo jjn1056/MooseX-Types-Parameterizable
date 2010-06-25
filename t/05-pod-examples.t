@@ -11,10 +11,6 @@ use Test::More;
     use MooseX::Types::Moose qw(Str Int ArrayRef);
     use MooseX::Types -declare=>[qw(Varchar)];
 
-    ## Create a type constraint that is a string but parameterizes an integer
-    ## that is used as a maximum length constraint on that string, similar to
-    ## an SQL Varchar type.
-
     subtype Varchar,
       as Parameterizable[Str,Int],
       where {
@@ -66,6 +62,55 @@ use Test::More;
     Test::More::is $object3->varchar_five, 'aabb',
       'coercion as expected';
 }
+
+{
+    package Test::MooseX::Types::Parameterizable::Description;
+
+    use Moose;
+    use MooseX::Types::Parameterizable qw(Parameterizable);
+    use MooseX::Types::Moose qw(HashRef Int);
+    use MooseX::Types -declare=>[qw(Range RangedInt)];
+
+    ## Minor change from docs to avoid additional test dependencies
+    subtype Range,
+        as HashRef[Int],
+        where {
+            my ($range) = @_;
+            return $range->{max} > $range->{min};
+        },
+        message { "Not a Valid range [ $_->{max} not > $_->{min} ] " };
+
+    subtype RangedInt,
+        as Parameterizable[Int, Range],
+        where {
+            my ($value, $range) = @_;
+            return ($value >= $range->{min} &&
+             $value <= $range->{max});
+        };
+        
+    Test::More::ok RangedInt([{min=>10,max=>100}])->check(50);
+    Test::More::ok !RangedInt([{min=>50, max=>75}])->check(99);
+
+    eval {
+        Test::More::ok !RangedInt([{min=>99, max=>10}])->check(10); 
+    }; 
+
+    Test::More::ok $@, 'There was an error';
+    Test::More::like $@, qr(Not a Valid range), 'Correct custom error';
+
+    Test::More::ok RangedInt([min=>10,max=>100])->check(50);
+    Test::More::ok ! RangedInt([min=>50, max=>75])->check(99);
+
+    eval {
+        RangedInt([min=>99, max=>10])->check(10); 
+    }; 
+
+    Test::More::ok $@, 'There was an error';
+    Test::More::like $@, qr(Not a Valid range), 'Correct custom error';
+
+
+}
+
 
 done_testing;
 

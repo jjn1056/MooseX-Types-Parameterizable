@@ -2,7 +2,7 @@ package MooseX::Types::Parameterizable;
 
 use 5.008;
 
-our $VERSION   = '0.01';
+our $VERSION   = '0.02';
 $VERSION = eval $VERSION;
 
 use Moose::Util::TypeConstraints;
@@ -26,7 +26,7 @@ The follow is example usage.
 
     ## Create a type constraint that is a string but parameterizes an integer
     ## that is used as a maximum length constraint on that string, similar to
-    ## an SQL Varchar type.
+    ## a SQL Varchar database type.
 
     subtype Varchar,
       as Parameterizable[Str,Int],
@@ -54,13 +54,13 @@ The follow is example usage.
 
     ## Dies with an invalid constraint for 'varchar_five'
     my $object2 = __PACKAGE__->new(
-        varchar_five => '12345678',
+        varchar_five => '12345678',  ## too long!
         varchar_ten => '123456789',
     );
 
     ## varchar_five coerces as expected
     my $object3 = __PACKAGE__->new(
-        varchar_five => [qw/aa bb/],
+        varchar_five => [qw/aa bb/],  ## coerces to "aabb"
         varchar_ten => '123456789',
     );
  
@@ -68,14 +68,20 @@ See t/05-pod-examples.t for runnable versions of all POD code
          
 =head1 DESCRIPTION
 
-A L<MooseX::Types> library for creating parameterizable types.  A parameterizable type
-constraint for all intents and uses is a subclass of a parent type, but adds a
-secondary type parameter which is available to constraint callbacks (such as
-inside the 'where' clause) or in the coercions.
+A L<MooseX::Types> library for creating parameterizable types.  A parameterizable
+type constraint for all intents and uses is a subclass of a parent type, but 
+adds additional type parameters which are available to constraint callbacks
+(such as inside the 'where' clause of a type constraint definition) or in the 
+coercions.
 
-This allows you to create a type that has additional runtime advice, such as a
-set of numbers within which another number must be unique, or allowable ranges
-for a integer, such as in:
+If you have L<Moose> experience, you probably are familiar with the builtin 
+parameterizable type constraints 'ArrayRef' and 'HashRef'.  This type constraint
+lets you generate your own versions of parameterized constraints that work
+similarly.  See L<Moose::Util::TypeConstraints> for more.
+
+Using this type constraint, you can generate new type constraints that have
+additional runtime advice, such as being able to specify maximum and minimum
+values for an Int (integer) type constraint:
 
     subtype Range,
         as Dict[max=>Int, min=>Int],
@@ -94,9 +100,11 @@ for a integer, such as in:
         
     RangedInt([{min=>10,max=>100}])->check(50); ## OK
     RangedInt([{min=>50, max=>75}])->check(99); ## Not OK, 99 exceeds max
-    
-This throws a hard Moose exception.  You'll need to capture it in an eval or
-related exception catching system (see L<TryCatch> or <Try::Tiny>.)
+
+The type parameter must be valid against the type constraint given.  If you pass
+an invalid value this throws a hard Moose exception.  You'll need to capture it
+in an eval or related exception catching system (see L<TryCatch> or <Try::Tiny>.)
+For example the following would throw a hard error (and not just return false)
 
     RangedInt([{min=>99, max=>10}])->check(10); ## Not OK, not a valid Range!
 
@@ -261,7 +269,7 @@ it is available to the constraint.
 
 =head2 Recursion
 
-    TBD
+    TBD - Need more tests.
 
 =head1 TYPE CONSTRAINTS
 
