@@ -236,7 +236,7 @@ when you say, "as Parameterizable[..." in your sub type declaration.  For exampl
       },
       message { "'$_' is too long"  };
 
-This is the </SYNOPSIS> example, which creates a new parameterizable subtype of
+This is the L</SYNOPSIS> example, which creates a new parameterizable subtype of
 Str which takes a single type parameter which must be an Int.  This Int is used
 to constrain the allowed length of the Str value.
 
