@@ -262,16 +262,32 @@ is a subtype of the parameterizable "Varchar" and it inherits coercions from
 its parent.  This may be a bit surprising to L<Moose> developers, but I believe
 this is the actual desired behavior.
 
-You can of course add extra coercions to a parameterized type:
+You can of course add new coercions to a subtype of a parameterizable type:
 
-    subtype Max40CharStr,
-      as Varchar[40];
+    subtype MySpecialVarchar,
+      as Varchar;
 
-    coerce Max40CharStr,
+    coerce MySpecialVarchar,
       from ...
 
-In which case this new parameterized type would inherit coercions from it's parent
-parameterizable type (Varchar), as well as the additional coercions you've added.
+In which case this new parameterizable type would NOT inherit coercions from
+it's parent parameterizable type (Varchar).  This is done in keeping with how
+generally speaking L<Moose> type constraints avoid complicated coercion inheritance
+schemes, however I am open to discussion if there are valid use cases.
+
+NOTE: One thing you can't do is add a coercion to an already parameterized type.
+Currently the following would throw a hard error:
+
+    subtype 40CharStr,
+      as Varchar[40];
+
+    coerce 40CharStr, ...  # BANG!
+
+This limitation is enforced since generally we expect coercions on the parent.
+However if good use cases arise we may lift this in the future.
+
+In general we are trying to take a conservative approach that keeps in line with
+how most L<Moose> authors expect type constraints to work.
 
 =head2 Recursion
 

@@ -199,95 +199,45 @@ use Test::More;
     ## See t/02-types-parameterizable-extended.t for remaining examples tests
 }
 
+{
+    package Test::MooseX::Types::Parameterizable::Coercions;
+
+    use Moose;
+    use MooseX::Types::Parameterizable qw(Parameterizable);
+    use MooseX::Types::Moose qw(HashRef ArrayRef Object Str Int);
+    use MooseX::Types -declare=>[qw(Varchar MySpecialVarchar )];
+
+
+    subtype Varchar,
+      as Parameterizable[Str, Int],
+      where {
+        my($string, $int) = @_;
+        $int >= length($string) ? 1:0;
+      },
+      message { "'$_' is too long"  };
+
+
+    coerce Varchar,
+      from Object,
+      via { "$_"; },  ## stringify the object
+      from ArrayRef,
+      via { join '',@$_ };  ## convert array to string
+
+    subtype MySpecialVarchar,
+      as Varchar;
+
+    coerce MySpecialVarchar,
+      from HashRef,
+      via { join '', keys %$_ };
+
+
+    Test::More::is Varchar([40])->coerce("abc"), 'abc';
+    Test::More::is Varchar([40])->coerce([qw/d e f/]), 'def';
+
+    Test::More::is MySpecialVarchar([40])->coerce("abc"), 'abc';
+    Test::More::is_deeply( MySpecialVarchar([40])->coerce([qw/d e f/]), [qw/d e f/]);
+    Test::More::is MySpecialVarchar([40])->coerce({a=>1, b=>2}), 'ab';
+}
 
 done_testing;
-
-
-__END__
-
-use MooseX::Types -declare=>[qw(Set UniqueInt PositiveSet PositiveUniqueInt )];
-
-subtype Set,
-  as class_type("Set::Scalar");
-
-subtype UniqueInt,
-  as Parameterizable[Int, Set],
-  where {
-    my ($int, $set) = @_;
-    !$set->has($int);
-  };
-
-subtype PositiveSet,
-  as Set,
-  where {
-    my ($set) = @_;
-    ! grep { $_ < 0 } $set->members;
-  };
-  
-subtype PositiveUniqueInt,
-  as UniqueInt[PositiveSet];
-
-my $set = Set::Scalar->new(-1,-2,1,2,3);
-my $positive_set = Set::Scalar->new(1,2,3);
-my $negative_set = Set::Scalar->new(-1,-2,-3);
-
-ok Set->check($set),
- 'Is a Set';
-
-ok Set->check($positive_set),
- 'Is a Set';
-
-ok Set->check($negative_set),
- 'Is a Set';
-
-ok !PositiveSet->check($set),
- 'Is Not a Positive Set';
-
-ok PositiveSet->check($positive_set),
- 'Is a Positive Set';
-
-ok !PositiveSet->check($negative_set),
- 'Is Not a Positive Set';
-
-ok UniqueInt([$set])->check(100),
- '100 not in Set';
-
-ok UniqueInt([$positive_set])->check(100),
- '100 not in Set';
-
-ok UniqueInt([$negative_set])->check(100),
- '100 not in Set';
-
-ok UniqueInt([$set])->check(-99),
- '-99 not in Set';
-
-ok UniqueInt([$positive_set])->check(-99),
- '-99 not in Set';
-
-ok UniqueInt([$negative_set])->check(-99),
-  '-99 not in Set';
-
-ok !UniqueInt([$set])->check(2),
- '2 in Set';
-
-ok !UniqueInt([$positive_set])->check(2),
- '2 in Set';
-
-ok UniqueInt([$negative_set])->check(2),
-  '2 not in Set';
-
-
-__END__
-
-ok UniqueInt([$set])->check(100);  ## Okay, 100 isn't in (1,2,3)
-ok UniqueInt([$set])->check(-99);  ## Okay, -99 isn't in (1,2,3)
-ok !UniqueInt([$set])->check(2);  ## Not OK, 2 is in (1,2,3)
-
-ok PositiveUniqueInt([$set])->check(100);  ## Okay, 100 isn't in (1,2,3)
-ok !PositiveUniqueInt([$set])->check(-99);  ## Not OK, -99 not Positive Int
-ok !PositiveUniqueInt([$set])->check(2);  ## Not OK, 2 is in (1,2,3)
-
-my $negative_set = Set::Scalar->new(-1,-2,-3);
-
-ok UniqueInt([$negative_set])->check(100);  ## Throws exception
 
