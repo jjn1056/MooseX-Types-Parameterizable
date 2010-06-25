@@ -212,67 +212,66 @@ could stick it wherever you'd need an Int.
     
 =head2 Coercions
 
-Parameterizable types have some limited support for coercions.  Several things must
-be kept in mind.  The first is that the coercion targets the type constraint
-which is being made parameterizable, Not the parameterized type.  So for example if you
-create a Parameterizable type like:
+A type coerction is a rule that allows you to transform one type from one or
+more other types.  Please see L<Moose::Cookbook::Basics::Recipe5> for an example
+of type coercions if you are not familiar with the subject.
 
-    subtype RequiredAgeInYears,
-      as Int;
+L<MooseX::Types::Parameterizable> support type coercions in all the ways you
+would expect.  In addition, it also supports a limited form of type coercion
+inheritance.  Generally speaking, type constraints don't inherit coercions since
+this would rapidly become confusing.  However, since your parameterizable type
+is intended to become parameterized in order to be useful, we support inheriting
+from a 'base' parameterizable type constraint to its 'child' parameterized sub
+types.
 
-    subtype PersonOverAge,
-      as Parameterizable[Person, RequiredAgeInYears]
+For the purposes of this discussion, a parameterizable type is a subtype created
+when you say, "as Parameterizable[..." in your sub type declaration.  For example
+
+    subtype Varchar,
+      as Parameterizable[Str, Int],
       where {
-        my ($person, $required_years_old) = @_;
-        return $person->years_old > $required_years_old;
-      }
+        my($string, $int) = @_;
+        $int >= length($string) ? 1:0;
+      },
+      message { "'$_' is too long"  };
 
-This would validate the following:
-    
-    my $person = Person->new(age=>35);
-    PersonOverAge([18])->check($person);
-    
-You can then apply the following coercion
+This is the </SYNOPSIS> example, which creates a new parameterizable subtype of
+Str which takes a single type parameter which must be an Int.  This Int is used
+to constrain the allowed length of the Str value.
 
-    coerce PersonOverAge,
-      from Dict[age=>int],
-      via {Person->new(%$_)},
-      from Int,
-      via {Person->new(age=>$_)};
-      
-This coercion would then apply to all the following:
+Now, this new sub type, "Varchar", is parameterizable since it can take a type
+parameter.  We can apply some coercions to it:
 
-    PersonOverAge([18])->check(30); ## via the Int coercion
-    PersonOverAge([18])->check({age=>50}); ## via the Dict coercion
+    coerce Varchar,
+      from Object,
+      via { "$_"; },  ## stringify the object
+      from ArrayRef,
+      via { join '',@$_ };  ## convert array to string
 
-However, you are not allowed to place coercions on parameterizable types that have
-had their constraining value filled, nor subtypes of such.  For example:
+This parameterizable subtype, "Varchar" itself is something you'd never use
+directly to constraint a value.  In other words you'd never do something like:
 
-    coerce PersonOverAge[18],
-      from DateTime,
-      via {$_->years};
-      
-That would generate a hard exception.  This is a limitation for now until I can
-devise a smarter way to cache the generated type constraints.  However, I doubt
-it will be a significant limitation, since the general use case is supported.
+    has name => (isa=>Varchar, ...)
 
-Lastly, the constraining value is available in the coercion in much the same way
-it is available to the constraint.
+You are going to do this:
 
-    ## Create a type constraint where a Person must be in the set
-    subtype PersonInSet,
-        as Parameterizable[Person, PersonSet],
-        where {
-            my ($person, $person_set) = @_;
-            $person_set->find($person);
-        }
+    has name => (isa=>Varchar[40], ...)
 
-    coerce PersonInSet,
-        from HashRef,
-        via {
-            my ($hashref, $person_set) = @_;
-            return $person_set->create($hash_ref);
-        };
+Which is actually useful.  However, "Varchar[40]" is a parameterized type, it
+is a subtype of the parameterizable "Varchar" and it inherits coercions from
+its parent.  This may be a bit surprising to L<Moose> developers, but I believe
+this is the actual desired behavior.
+
+You can of course add extra coercions to a parameterized type:
+
+    subtype Max40CharStr,
+      as Varchar[40];
+
+    coerce Max40CharStr,
+      from ...
+
+In which case this new parameterized type would inherit coercions from it's parent
+parameterizable type (Varchar), as well as the additional coercions you've added.
 
 =head2 Recursion
 
