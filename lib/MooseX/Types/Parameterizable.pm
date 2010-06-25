@@ -106,7 +106,7 @@ values for an Int (integer) type constraint:
 
 The type parameter must be valid against the type constraint given.  If you pass
 an invalid value this throws a hard Moose exception.  You'll need to capture it
-in an eval or related exception catching system (see L<TryCatch> or <Try::Tiny>.)
+in an eval or related exception catching system (see L<TryCatch> or L<Try::Tiny>.)
 For example the following would throw a hard error (and not just return false)
 
     RangedInt([{min=>99, max=>10}])->check(10); ## Not OK, not a valid Range!
