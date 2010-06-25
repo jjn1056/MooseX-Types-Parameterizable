@@ -202,32 +202,19 @@ range:
 Notice how re-parameterizing the parameterizable type 'RangedInt' works slightly
 differently from re-parameterizing 'PositiveRange'  Although it initially takes
 two type constraint values to declare a parameterizable type, should you wish to
-later re-parameterize it, you only use a subtype of the second type parameter
-(the parameterizable type constraint) since the first type constraint sets the parent
-type for the parameterizable type.  In other words, given the example above, a type
-constraint of 'RangedInt' would have a parent of 'Int', not 'Parameterizable' and for
-all intends and uses you could stick it wherever you'd need an Int.
+later re-parameterize it, you only use a subtype of the extra type parameter
+(the parameterizable type constraints) since the first type constraint sets the
+parent type for the parameterizable type.
 
-    subtype NameAge,
-        as Tuple[Str, Int];
-    
-    ## re-parameterized subtypes of NameAge containing a Parameterizable Int    
-    subtype NameBetween18and35Age,
-        as NameAge[
-            Str,
-            PositiveRangedInt[min=>18,max=>35],
-        ];
-
-One caveat is that you can't stick an unparameterized parameterizable type inside a
-structure, such as L<MooseX::Types::Structured> since that would require the
-ability to convert a 'containing' type constraint into a parameterizable type, which
-is a capacity we current don't have.
+In other words, given the example above, a type constraint of 'RangedInt' would
+have a parent of 'Int', not 'Parameterizable' and for all intends and uses you 
+could stick it wherever you'd need an Int.
     
 =head2 Coercions
 
 Parameterizable types have some limited support for coercions.  Several things must
 be kept in mind.  The first is that the coercion targets the type constraint
-which is being made parameterizable, Not the parameterizable type.  So for example if you
+which is being made parameterizable, Not the parameterized type.  So for example if you
 create a Parameterizable type like:
 
     subtype RequiredAgeInYears,
