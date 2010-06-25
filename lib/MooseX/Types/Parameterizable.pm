@@ -36,6 +36,8 @@ The follow is example usage.
       },
       message { "'$_' is too long"  };
 
+    ## Coerce an ArrayRef to a string via concatenation.
+
     coerce Varchar,
       from ArrayRef,
       via { 
@@ -130,14 +132,14 @@ This is the preferred syntax, as it improve readability and adds to the
 conciseness of your type constraint declarations.  An exception wil be thrown if
 your type parameters don't match the required reference type.
 
-Also not that if you 'chain' parameterization results with a method call like:
+Also note that if you 'chain' parameterization results with a method call like:
 
     TypeConstraint([$ob])->method;
     
 You need to have the "(...)" around the ArrayRef in the Type Constraint
-parameters.  This seems to have something to do with the precendent level of
-"->".  Patches or thoughts welcomed.  You only need to do this in the above
-case which I imagine is not a very common case.
+parameters.  You can skip the wrapping parenthesis in the most common cases,
+such as when you use the type constraint in the options section of a L<Moose>
+attribute declaration, or when defining type libraries.
 
 ==head2 Subtyping a Parameterizable type constraints
 
@@ -161,7 +163,18 @@ Example subtype with additional constraints:
             shift >= 0;              
         };
         
-Or you could have done the following instead:
+In this case you'd now have a parameterizable type constraint called which
+would work like:
+
+    Test::More::ok PositiveRangedInt([{min=>-10, max=>75}])->check(5);
+    Test::More::ok !PositiveRangedInt([{min=>-10, max=>75}])->check(-5);
+
+Of course the above is somewhat counter-intuitive to the reader, since we have
+defined our 'RangedInt' in such as way as to let you declare negative ranges.
+For the moment each type constraint rule is apply without knowledge of any
+other rule, nor can a rule 'inform' existing rules.  This is a limitation of
+the current system.  However, you could instead do the following:
+
 
     ## Subtype of Int for positive numbers
     subtype PositiveInt,
@@ -178,6 +191,13 @@ Or you could have done the following instead:
     ## create subtype via reparameterizing
     subtype PositiveRangedInt,
         as RangedInt[PositiveRange];
+
+This would constrain values in the same way as the previous type constraint but
+have the bonus that you'd throw a hard exception if you try to use an incorrect
+range:
+
+    Test::More::ok PositiveRangedInt([{min=>10, max=>75}])->check(15); ## OK
+    Test::More::ok !PositiveRangedInt([{min=>-10, max=>75}])->check(-5); ## Dies
 
 Notice how re-parameterizing the parameterizable type 'RangedInt' works slightly
 differently from re-parameterizing 'PositiveRange'  Although it initially takes

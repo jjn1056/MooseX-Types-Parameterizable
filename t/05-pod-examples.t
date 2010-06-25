@@ -111,6 +111,94 @@ use Test::More;
 
 }
 
+{
+    package Test::MooseX::Types::Parameterizable::Subtypes;
+
+    use Moose;
+    use MooseX::Types::Parameterizable qw(Parameterizable);
+    use MooseX::Types::Moose qw(HashRef Int);
+    use MooseX::Types -declare=>[qw(Range RangedInt PositiveRangedInt 
+        PositiveInt PositiveRange PositiveRangedInt2 )];
+
+    ## Minor change from docs to avoid additional test dependencies
+    subtype Range,
+        as HashRef[Int],
+        where {
+            my ($range) = @_;
+            return $range->{max} > $range->{min};
+        },
+        message { "Not a Valid range [ $_->{max} not > $_->{min} ] " };
+
+    subtype RangedInt,
+        as Parameterizable[Int, Range],
+        where {
+            my ($value, $range) = @_;
+            return ($value >= $range->{min} &&
+             $value <= $range->{max});
+        };
+        
+    subtype PositiveRangedInt,
+        as RangedInt,
+        where {
+            shift >= 0;              
+        };
+
+    Test::More::ok PositiveRangedInt([{min=>10,max=>100}])->check(50);
+    Test::More::ok !PositiveRangedInt([{min=>50, max=>75}])->check(99);
+
+    eval {
+        Test::More::ok !PositiveRangedInt([{min=>99, max=>10}])->check(10); 
+    }; 
+
+    Test::More::ok $@, 'There was an error';
+    Test::More::like $@, qr(Not a Valid range), 'Correct custom error';
+
+    Test::More::ok PositiveRangedInt([min=>10,max=>100])->check(50);
+    Test::More::ok ! PositiveRangedInt([min=>50, max=>75])->check(99);
+
+    eval {
+        PositiveRangedInt([min=>99, max=>10])->check(10); 
+    }; 
+
+    Test::More::ok $@, 'There was an error';
+    Test::More::like $@, qr(Not a Valid range), 'Correct custom error';
+
+    Test::More::ok !PositiveRangedInt([{min=>-10, max=>75}])->check(-5);
+
+    ## Subtype of Int for positive numbers
+    subtype PositiveInt,
+        as Int,
+        where {
+            my ($value, $range) = @_;
+            return $value >= 0;
+        };
+
+    ## subtype Range to re-parameterize Range with subtypes.  Minor change from
+    ## docs to reduce test dependencies
+
+    subtype PositiveRange,
+      as Range[PositiveInt],
+      message { "[ $_->{max} not > $_->{min} ] is not a positive range " };
+    
+    ## create subtype via reparameterizing
+    subtype PositiveRangedInt2,
+        as RangedInt[PositiveRange];
+
+    Test::More::ok PositiveRangedInt2([{min=>10,max=>100}])->check(50);
+    Test::More::ok !PositiveRangedInt2([{min=>50, max=>75}])->check(99);
+
+    eval {
+        Test::More::ok !PositiveRangedInt2([{min=>99, max=>10}])->check(10); 
+    }; 
+
+    Test::More::ok $@, 'There was an error';
+    Test::More::like $@, qr(not a positive range), 'Correct custom error';
+
+    Test::More::ok !PositiveRangedInt2([{min=>10, max=>75}])->check(-5);
+
+    ## See t/02-types-parameterizable-extended.t for remaining examples tests
+}
+
 
 done_testing;
 
