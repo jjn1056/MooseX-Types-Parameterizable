@@ -2,7 +2,7 @@ package MooseX::Types::Parameterizable;
 
 use 5.008;
 
-our $VERSION   = '0.03';
+our $VERSION   = '0.04';
 $VERSION = eval $VERSION;
 
 use Moose::Util::TypeConstraints;
@@ -75,7 +75,7 @@ A L<MooseX::Types> library for creating parameterizable types.  A parameterizabl
 type constraint for all intents and uses is a subclass of a parent type, but 
 adds additional type parameters which are available to constraint callbacks
 (such as inside the 'where' clause of a type constraint definition) or in the 
-coercions.
+coercions you define for a given type constraint.
 
 If you have L<Moose> experience, you probably are familiar with the builtin 
 parameterizable type constraints 'ArrayRef' and 'HashRef'.  This type constraint
@@ -104,15 +104,25 @@ values for an Int (integer) type constraint:
     RangedInt([{min=>10,max=>100}])->check(50); ## OK
     RangedInt([{min=>50, max=>75}])->check(99); ## Not OK, exceeds max
 
-The type parameter must be valid against the type constraint given.  If you pass
-an invalid value this throws a hard Moose exception.  You'll need to capture it
-in an eval or related exception catching system (see L<TryCatch> or L<Try::Tiny>.)
+This is useful since it lets you generate common patterns of type constraints
+rather than build a custom type constraint for all similar cases.
+
+The type parameter must be valid against the 'constrainting' type constraint used
+in the Parameterizable condition.  If you pass an invalid value this throws a
+hard Moose exception.  You'll need to capture it in an eval or related exception
+catching system (see L<TryCatch> or L<Try::Tiny>.)
+
 For example the following would throw a hard error (and not just return false)
 
     RangedInt([{min=>99, max=>10}])->check(10); ## Not OK, not a valid Range!
 
-If you can't accept a hard exception here, you'll need to test the constraining
-values first, as in:
+In the above case the 'min' value is larger than the 'max', which violates the
+Range constraint.  We throw a hard error here since I think incorrect type
+parameters are most likely to be the result of a typo or other true error
+conditions.  
+
+If you can't accept a hard exception here, you can either trap it as advised
+above or you need to test the constraining values first, as in:
 
     my $range = {min=>99, max=>10};
     if(my $err = Range->validate($range)) {
@@ -130,8 +140,7 @@ parameters, so that the above could also be written as:
     RangedInt([min=>99, max=>10])->check(10); ## Exception, not valid Range
 
 This is the preferred syntax, as it improve readability and adds to the
-conciseness of your type constraint declarations.  An exception wil be thrown if
-your type parameters don't match the required reference type.
+conciseness of your type constraint declarations.
 
 Also note that if you 'chain' parameterization results with a method call like:
 
@@ -164,8 +173,8 @@ Example subtype with additional constraints:
             shift >= 0;              
         };
         
-In this case you'd now have a parameterizable type constraint called which
-would work like:
+In this case you'd now have a parameterizable type constraint which would
+work like:
 
     Test::More::ok PositiveRangedInt([{min=>-10, max=>75}])->check(5);
     Test::More::ok !PositiveRangedInt([{min=>-10, max=>75}])->check(-5);
@@ -209,7 +218,8 @@ parent type for the parameterizable type.
 
 In other words, given the example above, a type constraint of 'RangedInt' would
 have a parent of 'Int', not 'Parameterizable' and for all intends and uses you 
-could stick it wherever you'd need an Int.
+could stick it wherever you'd need an Int.  You can't change the parent, even
+to make it a subclass of Int.
     
 =head2 Coercions
 
@@ -217,7 +227,7 @@ A type coerction is a rule that allows you to transform one type from one or
 more other types.  Please see L<Moose::Cookbook::Basics::Recipe5> for an example
 of type coercions if you are not familiar with the subject.
 
-L<MooseX::Types::Parameterizable> support type coercions in all the ways you
+L<MooseX::Types::Parameterizable> supports type coercions in all the ways you
 would expect.  In addition, it also supports a limited form of type coercion
 inheritance.  Generally speaking, type constraints don't inherit coercions since
 this would rapidly become confusing.  However, since your parameterizable type
@@ -226,7 +236,8 @@ from a 'base' parameterizable type constraint to its 'child' parameterized sub
 types.
 
 For the purposes of this discussion, a parameterizable type is a subtype created
-when you say, "as Parameterizable[..." in your sub type declaration.  For example
+when you say, "as Parameterizable[..." in your sub type declaration.  For
+example:
 
     subtype Varchar,
       as Parameterizable[Str, Int],
@@ -252,7 +263,7 @@ parameter.  We can apply some coercions to it:
 This parameterizable subtype, "Varchar" itself is something you'd never use
 directly to constraint a value.  In other words you'd never do something like:
 
-    has name => (isa=>Varchar, ...)
+    has name => (isa=>Varchar, ...); ## Why not just use a Str?
 
 You are going to do this:
 
@@ -298,15 +309,13 @@ how most L<Moose> authors expect type constraints to work.
 
 This type library defines the following constraints.
 
-=head2 Parameterizable[ParentTypeConstraint, ParameterizableValueTypeConstraint]
+=head2 Parameterizable[ParentTypeConstraint, ConstrainingValueTypeConstraint]
 
 Create a subtype of ParentTypeConstraint with a dependency on a value that can
-pass the ParameterizableValueTypeConstraint. If ParameterizableValueTypeConstraint is empty
+pass the ConstrainingValueTypeConstraint. If ConstrainingValueTypeConstraint is empty
 we default to the 'Any' type constraint (see L<Moose::Util::TypeConstraints>).
-
-This creates a type constraint which must be further parameterized at later time
-before it can be used to ->check or ->validate a value.  Attempting to do so
-will cause an exception.
+This is useful if you are creating some base Parameterizable type constraints
+that you intend to sub class.
 
 =cut
 
@@ -317,6 +326,12 @@ Moose::Util::TypeConstraints::get_type_constraint_registry->add_type_constraint(
         constraint => sub {1},
     )
 );
+
+=head1 SEE ALSO
+
+The following modules or resources may be of interest.
+
+L<Moose>, L<Moose::Meta::TypeConstraint>, L<MooseX::Types>
 
 =head1 AUTHOR
 

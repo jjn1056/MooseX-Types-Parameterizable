@@ -12,18 +12,15 @@ extends 'Moose::Meta::TypeConstraint';
 
 =head1 NAME
 
-MooseX::Meta::TypeConstraint::Parameterizable - Metaclass for Parameterizable type constraints.
+MooseX::Meta::TypeConstraint::Parameterizable - Parameterizable Meta Class.
 
 =head1 DESCRIPTION
 
-see L<MooseX::Parameterizable::Types> for how to use parameterizable
+See L<MooseX::Types::Parameterizable> for how to use parameterizable
 types.  This class is a subclass of L<Moose::Meta::TypeConstraint> which
 provides the gut functionality to enable parameterizable type constraints.
 
-This class is not intended for public consumption.  Please don't subclass it
-or rely on it.  Chances are high stuff here is going to change a lot.  For
-example, I will probably refactor this into several classes to get rid of all
-the ugly conditionals.
+You probably won't need to subclass or consume this class directly.
 
 =head1 ATTRIBUTES
 
@@ -37,7 +34,7 @@ The type constraint whose validity is being made parameterizable.
 
 has 'parent_type_constraint' => (
     is=>'ro',
-    isa=>'Object',
+    isa=>Moose::Util::TypeConstraints::class_type('Moose::Meta::TypeConstraint'),
     default=> sub {
         Moose::Util::TypeConstraints::find_type_constraint("Any");
     },
@@ -54,7 +51,7 @@ constraining value of the parameterizable type.
 
 has 'constraining_value_type_constraint' => (
     is=>'ro',
-    isa=>'Object',
+    isa=>Moose::Util::TypeConstraints::class_type('Moose::Meta::TypeConstraint'),
     default=> sub {
         Moose::Util::TypeConstraints::find_type_constraint("Any");
     },
@@ -67,6 +64,9 @@ This is the actual value that constraints the L</parent_type_constraint>
 
 =cut
 
+## TODO, this is where we probably should break out Parameterized stuff from
+## parameterizable...
+
 has 'constraining_value' => (
     is=>'ro',
     predicate=>'has_constraining_value',
@@ -78,12 +78,9 @@ This class defines the following methods.
 
 =head2 new
 
-Do some post build stuff
+Do some post build stuff, mostly make sure we set the correct coercion object.
 
 =cut
-
-## Right now I add in the parameterizable type coercion until I can merge some Moose
-## changes upstream.
  
 around 'new' => sub {
     my ($new, $class, @args) = @_;
@@ -188,7 +185,7 @@ sub parameterize {
             if(my $exists = Moose::Util::TypeConstraints::find_type_constraint($name)) {
                 return $exists;
             } else {
-                my $type_constraint = $class->new(
+                return $class->new(
                     name => $name,
                     parent => $self,
                     constraint => $self->constraint,
@@ -197,10 +194,6 @@ sub parameterize {
                     constraining_value_type_constraint => $self->constraining_value_type_constraint,
                     message => $self->message,
                 );
-                
-                ## TODO This is probably going to have to go away (too many things added to the registry)
-                ##Moose::Util::TypeConstraints::get_type_constraint_registry->add_type_constraint($type_constraint);
-                return $type_constraint;
             }
         }
     } 
@@ -320,19 +313,6 @@ around 'validate' => sub {
 modify this method so that we pass along the constraining value to the constraint
 coderef and also throw the correct error message if the constraining value does
 not match it's requirement.
-
-around 'compile_type_constraint' => sub {
-    my ($compile_type_constraint, $self, @args) = @_;
-    
-    if($self->has_type_constraints) {
-        my $type_constraints = $self->type_constraints;
-        my $constraint = $self->generate_constraint_for($type_constraints);
-        $self->_set_constraint($constraint);        
-    }
-
-    return $self->$compile_type_constraint(@args);
-};
-
 
 =cut
 

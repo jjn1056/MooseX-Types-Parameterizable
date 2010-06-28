@@ -1,5 +1,8 @@
 Revision history for MooseX-Types-Parameterized
 
+0.04    28 June 2010
+        - More documentation fixes, no code changes
+
 0.03    25 June 2010
         - more documentation fixes, better coecion docs
         - more tests

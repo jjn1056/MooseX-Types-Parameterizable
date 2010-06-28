@@ -10,9 +10,9 @@ MooseX::Meta::TypeCoercion::Parameterizable - Coerce Parameterizable type constr
 
 =head1 DESCRIPTION
 
-This class is not intended for public consumption.  Please don't subclass it
-or rely on it.  Chances are high stuff here is going to change a lot.
-
+Coercion Meta Class, intended to make sure coercions work correctly with
+parameterized types.  You probably won't consume or subclass this class directly
+ 
 =head1 METHODS
 
 This class defines the following methods.
@@ -20,10 +20,10 @@ This class defines the following methods.
 =head add_type_coercions
 
 method modification to throw exception should we try to add a coercion on a
-parameterizable type that is already defined by a constraining value.  We do this
-since defined parameterizable type constraints inherit their coercion from the parent
-constraint.  It makes no sense to even be using parameterizable types if you know the
-constraining value beforehand!
+parameterizable type that is already defined by a constraining value.  We do
+this since defined parameterizable type constraints inherit their coercion from
+the parent constraint.  It makes no sense to even be using parameterizable
+types if you know the constraining value beforehand!
 
 =cut
 
@@ -38,12 +38,13 @@ around 'add_type_coercions' => sub {
 
 
 ## These two are here until I can merge change upstream to Moose.  These are two
-## very minor changes we can probably just put into Moose without breaking stuff
+## very minor changes we can probably just put into Moose without breaking stuff.
+## Hopefully can can eventually stop doing this.
 
 sub coerce {
     my $self = shift @_;
     my $coderef = $self->_compiled_type_coercion;
-    return $coderef->(@_);
+    return $coderef->(@_); ## <== in Moose we don't call on @_, but $_[1]
 }
 
 sub compile_type_coercion {
@@ -73,7 +74,7 @@ sub compile_type_coercion {
             my ($constraint, $converter) = @$coercion;
             if ($constraint->($thing)) {
                 local $_ = $thing;
-                return $converter->($thing, @_);
+                return $converter->($thing, @_); ## <== Here also we pass @_ which Moose doesn't 
             }
         }
         return $thing;
