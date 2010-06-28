@@ -223,7 +223,7 @@ to make it a subclass of Int.
     
 =head2 Coercions
 
-A type coerction is a rule that allows you to transform one type from one or
+A type coercion is a rule that allows you to transform one type from one or
 more other types.  Please see L<Moose::Cookbook::Basics::Recipe5> for an example
 of type coercions if you are not familiar with the subject.
 
