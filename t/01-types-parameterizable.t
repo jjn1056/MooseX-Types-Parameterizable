@@ -106,7 +106,7 @@ use Test::More tests=>79; {
       '"aaa" is not an integer';
       
     like IntLessThan->validate('aaa'),
-      qr/Validation failed for 'main::EvenInt' with value aaa/,
+      qr/Validation failed for 'main::EvenInt' with value .*aaa.*/,
       'Got expected error messge for "aaa"';
       
     ok !IntLessThan->check(1),
