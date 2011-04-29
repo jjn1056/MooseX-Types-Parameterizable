@@ -1,5 +1,8 @@
 Revision history for MooseX-Types-Parameterized
 
+0.05    28 April 2011
+        - Changes for Moose to be
+
 0.04    28 June 2010
         - More documentation fixes, no code changes
 

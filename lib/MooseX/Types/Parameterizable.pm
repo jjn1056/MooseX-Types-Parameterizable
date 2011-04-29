@@ -2,7 +2,7 @@ package MooseX::Types::Parameterizable;
 
 use 5.008;
 
-our $VERSION   = '0.04';
+our $VERSION   = '0.05';
 $VERSION = eval $VERSION;
 
 use Moose::Util::TypeConstraints;
