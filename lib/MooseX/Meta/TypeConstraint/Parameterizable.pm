@@ -192,7 +192,7 @@ sub parameterize {
                     constraining_value => $args,
                     parent_type_constraint=>$self->parent_type_constraint,
                     constraining_value_type_constraint => $self->constraining_value_type_constraint,
-                    ($self->has_message ? (message => $self->message) : ()),
+                    ($self->has_message ? (message => sub { $self->message->( @_, $args ) } ) : ()),
                 );
             }
         }
