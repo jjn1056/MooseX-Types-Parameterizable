@@ -3,10 +3,10 @@
 use strict;
 use warnings FATAL =>'all';
 use inc::Module::Install 1.00;
-do 'maint/Makefile.PL.include'
- if $Module::Install::AUTHOR;
 
 all_from 'lib/MooseX/Types/Parameterizable.pm';
+do 'maint/Makefile.PL.include'
+ if $Module::Install::AUTHOR;
 
 requires 'Moose' => '1.08';
 requires 'MooseX::Types' => '0.22';
@@ -17,8 +17,6 @@ requires 'Digest::MD5' => '2.39';
 
 build_requires 'Test::More' => '0.94';
 build_requires 'Test::Exception' => '0.29';
-
 test_requires 'Test::Most';
 
 WriteAll;
-

@@ -1,5 +1,11 @@
 Revision history for MooseX-Types-Parameterized
 
+0.07   02 August 2011
+        - Changed the way we set a message so that we can access both value and
+          parameterized type in the message.  This lets us make more useful error
+          messages (brianphillips)
+        - Test case for above
+
 0.06   25 July 2011
         - Fixed problem when you create a type with no message (brianphillips)
         - test case for above
