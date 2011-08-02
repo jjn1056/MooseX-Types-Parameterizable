@@ -19,7 +19,7 @@ use Test::More;
         $int >= length($string) ? 1:0;
       };
 
-	has short_string => ( is => 'rw', isa => Varchar[5] );
+    has short_string => ( is => 'rw', isa => Varchar[5] );
 }
 
 my $obj = Test::MyMooseClass->new(short_string => 'four');
