@@ -32,7 +32,7 @@ Create a type constraint that is similar to SQL Varchar type.
         my($string, $int) = @_;
         $int >= length($string) ? 1:0;
       },
-      message { "'$_' is too long"  };
+      message { "'$_[0]' is too long (max length $_[1])" };
 
 Coerce an ArrayRef to a string via concatenation.
 
@@ -99,7 +99,11 @@ values for an Int (integer) type constraint:
             my ($value, $range) = @_;
             return ($value >= $range->{min} &&
              $value <= $range->{max});
-        };
+        },
+		message {
+            my ($value, $range) = @_;
+			return "$value must be between $range->{min} and $range->{max} (inclusive)";
+		};
         
     RangedInt([{min=>10,max=>100}])->check(50); ## OK
     RangedInt([{min=>50, max=>75}])->check(99); ## Not OK, exceeds max
@@ -163,6 +167,10 @@ type constraints are a subtype of the parent.  For example:
             my ($value, $range) = @_;
             return ($value >= $range->{min} &&
              $value =< $range->{max});
+        },
+		message {
+            my ($value, $range) = @_;
+			return "$value must be between $range->{min} and $range->{max} (inclusive)";
         };
 
 Example subtype with additional constraints:
@@ -245,7 +253,7 @@ example:
         my($string, $int) = @_;
         $int >= length($string) ? 1:0;
       },
-      message { "'$_' is too long"  };
+      message { "'$_[0]' is too long (max length $_[1])" };
 
 This is the L</SYNOPSIS> example, which creates a new parameterizable subtype of
 Str which takes a single type parameter which must be an Int.  This Int is used
@@ -256,9 +264,9 @@ parameter.  We can apply some coercions to it:
 
     coerce Varchar,
       from Object,
-      via { "$_"; },  ## stringify the object
+      via { "$_" },  ## stringify the object
       from ArrayRef,
-      via { join '',@$_ };  ## convert array to string
+      via { join '', @$_ };  ## convert array to string
 
 This parameterizable subtype, "Varchar" itself is something you'd never use
 directly to constraint a value.  In other words you'd never do something like:
