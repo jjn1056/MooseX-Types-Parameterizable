@@ -17,7 +17,7 @@ use Test::More;
         my($string, $int) = @_;
         $int >= length($string) ? 1:0;
       },
-      message { "'$_' is too long"  };
+      message { "'$_[0]' is too long (max length $_[1])" };
 
     coerce Varchar,
       from ArrayRef,
@@ -52,7 +52,7 @@ use Test::More;
     };
 
     Test::More::ok $@, 'There was an error';
-    Test::More::like $@, qr('12345678' is too long), 'Correct custom error';
+    Test::More::like $@, qr{'12345678' is too long \(max length 5\)}, 'Correct custom error';
 
     my $object3 = __PACKAGE__->new(
         varchar_five => [qw/aa bb/],
