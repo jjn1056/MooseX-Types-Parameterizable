@@ -63,7 +63,7 @@ is OlderThanAge([older_than=>2])->coerce({a=>5,b=>6,c=>7,d=>8}), 4,
     __PACKAGE__->meta->make_immutable;
 }
 ok my $person = Person->new;
-is $person->age(3),
+ok $person->age(3),
   '3 is older than 2';
 is $person->age([1..10]), 55,
   'Coerce works';
