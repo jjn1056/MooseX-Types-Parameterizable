@@ -56,20 +56,6 @@ like OlderThanAge([older_than=>2])->name, qr/main::OlderThanAge\[/,
 is OlderThanAge([older_than=>2])->coerce({a=>5,b=>6,c=>7,d=>8}), 4,
   'Coerce works';
 
-{
-    package Person;
-    use Moose;
-    has age=>(is=>'rw',isa=>main::OlderThanAge[older_than=>2],coerce=>1);
-    __PACKAGE__->meta->make_immutable;
-}
-ok my $person = Person->new;
-ok $person->age(3),
-  '3 is older than 2';
-is $person->age([1..10]), 55,
-  'Coerce works';
-is $person->age({a=>5,b=>6,c=>7,d=>8}), 4,
-  'Coerce works';
-
 SKIP: {
     skip 'Type Coercions on defined types not supported yet', 1;
 
