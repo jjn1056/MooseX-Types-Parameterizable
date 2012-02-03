@@ -7,7 +7,7 @@ use MooseX::Meta::TypeCoercion::Parameterizable;
 use Scalar::Util qw(blessed);
 use Data::Dump;
 use Digest::MD5;
-            
+
 extends 'Moose::Meta::TypeConstraint';
 
 =head1 NAME
@@ -40,7 +40,6 @@ has 'parent_type_constraint' => (
     },
     required=>1,
 );
-
 
 =head2 constraining_value_type_constraint
 
@@ -81,19 +80,19 @@ This class defines the following methods.
 Do some post build stuff, mostly make sure we set the correct coercion object.
 
 =cut
- 
+
 around 'new' => sub {
     my ($new, $class, @args) = @_;
     my $self = $class->$new(@args);
     my $coercion = MooseX::Meta::TypeCoercion::Parameterizable->new(type_constraint => $self);
-    $self->coercion($coercion);    
+    $self->coercion($coercion);
     return $self;
 };
 
 =head2 parameterize (@args)
 
 Given a ref of type constraints, create a parameterized constraint
-    
+
 =cut
 
 sub parameterize {
@@ -102,25 +101,25 @@ sub parameterize {
 
     Moose->throw_error("$self already has a constraining value.") if
      $self->has_constraining_value;
-         
+
     if(blessed $_[0] && $_[0]->isa('Moose::Meta::TypeConstraint')) {
         my $arg1 = shift @_;
-         
+
         if(blessed $_[0] && $_[0]->isa('Moose::Meta::TypeConstraint')) {
             my $arg2 = shift @_ || $self->constraining_value_type_constraint;
-            
+
             ## TODO fix this crap!
             Moose->throw_error("$arg2 is not a type constraint")
              unless $arg2->isa('Moose::Meta::TypeConstraint');
-             
+
             Moose->throw_error("$arg1 is not a type of: ".$self->parent_type_constraint->name)
              unless $arg1->is_a_type_of($self->parent_type_constraint);
 
             Moose->throw_error("$arg2 is not a type of: ".$self->constraining_value_type_constraint->name)
              unless $arg2->is_a_type_of($self->constraining_value_type_constraint);
-             
+
             Moose->throw_error('Too Many Args!  Two are allowed.') if @_;
-            
+
             my $name = $self->_generate_subtype_name($arg1, $arg2);
             if(my $exists = Moose::Util::TypeConstraints::find_type_constraint($name)) {
                 return $exists;
@@ -138,7 +137,7 @@ sub parameterize {
         } else {
             Moose->throw_error("$arg1 is not a type of: ".$self->constraining_value_type_constraint->name)
              unless $arg1->is_a_type_of($self->constraining_value_type_constraint);
-             
+
             my $name = $self->_generate_subtype_name($self->parent_type_constraint, $arg1);
             if(my $exists = Moose::Util::TypeConstraints::find_type_constraint($name)) {
                 return $exists;
@@ -163,7 +162,7 @@ sub parameterize {
                     $args = {@_};
                 } else {
                     $args = [@_];
-                }                
+                }
             } else {
                 $args = $_[0];
             }
@@ -172,14 +171,14 @@ sub parameterize {
             ## TODO:  Is there a use case for parameterizing null or undef?
             Moose->throw_error('Cannot Parameterize null values.');
         }
-        
+
         if(my $err = $self->constraining_value_type_constraint->validate($args)) {
             Moose->throw_error($err);
         } else {
 
             my $sig = $args;
             if(ref $sig) {
-                $sig = Digest::MD5::md5_hex(Data::Dump::dump($args));               
+                $sig = Digest::MD5::md5_hex(Data::Dump::dump($args));
             }
             my $name = $self->name."[$sig]";
             if(my $exists = Moose::Util::TypeConstraints::find_type_constraint($name)) {
@@ -196,7 +195,7 @@ sub parameterize {
                 );
             }
         }
-    } 
+    }
 }
 
 =head2 _generate_subtype_name
@@ -242,17 +241,17 @@ figure out what a parameterizable type is (multiply inheritance or a role...)
 
 around 'equals' => sub {
     my ( $equals, $self, $type_or_name ) = @_;
-    
+
     my $other = defined $type_or_name ?
       Moose::Util::TypeConstraints::find_type_constraint($type_or_name) :
       Moose->throw_error("Can't call $self ->equals without a parameter");
-      
+
     Moose->throw_error("$type_or_name is not a registered Type")
      unless $other;
-     
+
     if(my $parent = $other->parent) {
         return $self->$equals($other)
-         || $self->parent->equals($parent);        
+         || $self->parent->equals($parent);
     } else {
         return $self->$equals($other);
     }
@@ -271,10 +270,10 @@ around 'is_subtype_of' => sub {
     my $other = defined $type_or_name ?
       Moose::Util::TypeConstraints::find_type_constraint($type_or_name) :
       Moose->throw_error("Can't call $self ->equals without a parameter");
-      
+
     Moose->throw_error("$type_or_name is not a registered Type")
      unless $other;
-     
+
     return $self->$is_subtype_of($other)
         || $self->parent_type_constraint->is_subtype_of($other);
 
@@ -322,8 +321,8 @@ around '_compiled_type_constraint' => sub {
     my $constraining;
     if($self->has_constraining_value) {
         $constraining = $self->constraining_value;
-    } 
-    
+    }
+
     return sub {
         my @local_args = @_;
         if(my $err = $self->constraining_value_type_constraint->validate($constraining)) {
@@ -351,12 +350,12 @@ around 'coerce' => sub {
             return $coerced;
         } else {
             my $parent = $self->parent;
-            return $parent->coerce(@args); 
+            return $parent->coerce(@args);
         }
     } else {
         my $parent = $self->parent;
-        return $parent->coerce(@args); 
-    } 
+        return $parent->coerce(@args);
+    }
 };
 
 =head1 SEE ALSO
