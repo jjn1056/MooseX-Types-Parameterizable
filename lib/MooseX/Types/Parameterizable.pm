@@ -38,14 +38,14 @@ Coerce an ArrayRef to a string via concatenation.
 
     coerce Varchar,
       from ArrayRef,
-      via { 
+      via {
         my ($arrayref, $int) = @_;
         join('', @$arrayref);
       };
 
     has 'varchar_five' => (isa=>Varchar[5], is=>'ro', coerce=>1);
     has 'varchar_ten' => (isa=>Varchar[10], is=>'ro');
-  
+
 Object created since attributes are valid
 
     my $object1 = __PACKAGE__->new(
@@ -66,18 +66,18 @@ varchar_five coerces as expected
         varchar_five => [qw/aa bb/],  ## coerces to "aabb"
         varchar_ten => '123456789',
     );
- 
+
 See t/05-pod-examples.t for runnable versions of all POD code
-         
+
 =head1 DESCRIPTION
 
 A L<MooseX::Types> library for creating parameterizable types.  A parameterizable
-type constraint for all intents and uses is a subclass of a parent type, but 
+type constraint for all intents and uses is a subclass of a parent type, but
 adds additional type parameters which are available to constraint callbacks
-(such as inside the 'where' clause of a type constraint definition) or in the 
+(such as inside the 'where' clause of a type constraint definition) or in the
 coercions you define for a given type constraint.
 
-If you have L<Moose> experience, you probably are familiar with the builtin 
+If you have L<Moose> experience, you probably are familiar with the builtin
 parameterizable type constraints 'ArrayRef' and 'HashRef'.  This type constraint
 lets you generate your own versions of parameterized constraints that work
 similarly.  See L<Moose::Util::TypeConstraints> for more.
@@ -100,11 +100,11 @@ values for an Int (integer) type constraint:
             return ($value >= $range->{min} &&
              $value <= $range->{max});
         },
-		message {
+                message {
             my ($value, $range) = @_;
-			return "$value must be between $range->{min} and $range->{max} (inclusive)";
-		};
-        
+                        return "$value must be between $range->{min} and $range->{max} (inclusive)";
+                };
+
     RangedInt([{min=>10,max=>100}])->check(50); ## OK
     RangedInt([{min=>50, max=>75}])->check(99); ## Not OK, exceeds max
 
@@ -123,7 +123,7 @@ For example the following would throw a hard error (and not just return false)
 In the above case the 'min' value is larger than the 'max', which violates the
 Range constraint.  We throw a hard error here since I think incorrect type
 parameters are most likely to be the result of a typo or other true error
-conditions.  
+conditions.
 
 If you can't accept a hard exception here, you can either trap it as advised
 above or you need to test the constraining values first, as in:
@@ -134,7 +134,7 @@ above or you need to test the constraining values first, as in:
     } else {
         RangedInt($range)->check(99);
     }
-    
+
 Please note that for ArrayRef or HashRef parameterizable type constraints, as in the
 example above, as a convenience we automatically ref the incoming type
 parameters, so that the above could also be written as:
@@ -149,7 +149,7 @@ conciseness of your type constraint declarations.
 Also note that if you 'chain' parameterization results with a method call like:
 
     TypeConstraint([$ob])->method;
-    
+
 You need to have the "(...)" around the ArrayRef in the Type Constraint
 parameters.  You can skip the wrapping parenthesis in the most common cases,
 such as when you use the type constraint in the options section of a L<Moose>
@@ -168,9 +168,9 @@ type constraints are a subtype of the parent.  For example:
             return ($value >= $range->{min} &&
              $value =< $range->{max});
         },
-		message {
+                message {
             my ($value, $range) = @_;
-			return "$value must be between $range->{min} and $range->{max} (inclusive)";
+                        return "$value must be between $range->{min} and $range->{max} (inclusive)";
         };
 
 Example subtype with additional constraints:
@@ -178,9 +178,9 @@ Example subtype with additional constraints:
     subtype PositiveRangedInt,
         as RangedInt,
         where {
-            shift >= 0;              
+            shift >= 0;
         };
-        
+
 In this case you'd now have a parameterizable type constraint which would
 work like:
 
@@ -193,7 +193,6 @@ For the moment each type constraint rule is apply without knowledge of any
 other rule, nor can a rule 'inform' existing rules.  This is a limitation of
 the current system.  However, you could instead do the following:
 
-
     ## Subtype of Int for positive numbers
     subtype PositiveInt,
         as Int,
@@ -205,7 +204,7 @@ the current system.  However, you could instead do the following:
     ## subtype Range to re-parameterize Range with subtypes
     subtype PositiveRange,
         as Range[max=>PositiveInt, min=>PositiveInt];
-    
+
     ## create subtype via reparameterizing
     subtype PositiveRangedInt,
         as RangedInt[PositiveRange];
@@ -225,10 +224,10 @@ later re-parameterize it, you only use a subtype of the extra type parameter
 parent type for the parameterizable type.
 
 In other words, given the example above, a type constraint of 'RangedInt' would
-have a parent of 'Int', not 'Parameterizable' and for all intends and uses you 
+have a parent of 'Int', not 'Parameterizable' and for all intends and uses you
 could stick it wherever you'd need an Int.  You can't change the parent, even
 to make it a subclass of Int.
-    
+
 =head2 Coercions
 
 A type coercion is a rule that allows you to transform one type from one or
