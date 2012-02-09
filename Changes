@@ -1,5 +1,9 @@
 Revision history for MooseX-Types-Parameterized
 
+0.08  08 February 2012
+        - POD fixes (chocolateboy++)
+        - remove pointless dependency (chocolateboy++)
+
 0.07   02 August 2011
         - Changed the way we set a message so that we can access both value and
           parameterized type in the message.  This lets us make more useful error
