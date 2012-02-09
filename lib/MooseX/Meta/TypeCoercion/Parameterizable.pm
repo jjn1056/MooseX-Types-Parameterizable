@@ -12,12 +12,12 @@ MooseX::Meta::TypeCoercion::Parameterizable - Coerce Parameterizable type constr
 
 Coercion Meta Class, intended to make sure coercions work correctly with
 parameterized types.  You probably won't consume or subclass this class directly
- 
+
 =head1 METHODS
 
 This class defines the following methods.
 
-=head add_type_coercions
+=head2 add_type_coercions
 
 method modification to throw exception should we try to add a coercion on a
 parameterizable type that is already defined by a constraining value.  We do
@@ -36,7 +36,6 @@ around 'add_type_coercions' => sub {
     }
 };
 
-
 ## These two are here until I can merge change upstream to Moose.  These are two
 ## very minor changes we can probably just put into Moose without breaking stuff.
 ## Hopefully can can eventually stop doing this.
@@ -54,8 +53,8 @@ sub compile_type_coercion {
     while (@coercion_map) {
         my ($constraint_name, $action) = splice(@coercion_map, 0, 2);
 
-        my $type_constraint = ref $constraint_name 
-                            ? $constraint_name 
+        my $type_constraint = ref $constraint_name
+                            ? $constraint_name
                             : Moose::Util::TypeConstraints::find_or_parse_type_constraint($constraint_name);
 
         unless ( defined $type_constraint ) {
@@ -74,7 +73,7 @@ sub compile_type_coercion {
             my ($constraint, $converter) = @$coercion;
             if ($constraint->($thing)) {
                 local $_ = $thing;
-                return $converter->($thing, @_); ## <== Here also we pass @_ which Moose doesn't 
+                return $converter->($thing, @_); ## <== Here also we pass @_ which Moose doesn't
             }
         }
         return $thing;

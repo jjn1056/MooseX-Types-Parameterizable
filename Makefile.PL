@@ -17,6 +17,5 @@ requires 'Digest::MD5' => '2.39';
 
 build_requires 'Test::More' => '0.94';
 build_requires 'Test::Exception' => '0.29';
-test_requires 'Test::Most';
 
 WriteAll;
