@@ -131,6 +131,8 @@ sub parameterize {
                     constraining_value_type_constraint => $arg2,
                 );
                 Moose::Util::TypeConstraints::get_type_constraint_registry->add_type_constraint($type_constraint);
+
+
                 return $type_constraint;
             }
         } else {
@@ -374,5 +376,5 @@ it under the same terms as Perl itself.
 
 =cut
 
-__PACKAGE__->meta->make_immutable(inline_constructor => 0,  inline_accessors => 0);
+__PACKAGE__->meta->make_immutable(inline_constructor => 0);
 

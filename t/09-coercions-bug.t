@@ -1,7 +1,4 @@
-package Person;
-
 use Test::Most;
-use Moose;
 use MooseX::Types::Parameterizable qw(Parameterizable);
 use MooseX::Types::Moose qw(Int Str HashRef ArrayRef);
 use MooseX::Types -declare=>[qw(
@@ -58,9 +55,18 @@ my $varchar = Varchar[5];
 is $varchar->coerce([qw/j o h n/]), 'john', 
   'coerce straight up works';
 
+ok $varchar->has_coercion, 'I have a coercion!';
 
-has age=>(is=>'rw', isa=>$olderthan, coerce=>1);
-has name=>(is=>'rw', isa=>$varchar,coerce=>1);
+{
+  package Person;
+
+  use Moose;
+    
+  has age=>(is=>'rw', isa=>$olderthan, coerce=>1);
+  has name=>(is=>'rw', isa=>$varchar,coerce=>1);
+
+  Person->meta->make_immutable();
+}
 
 ok my $person = Person->new,
   'Created a testable object';
