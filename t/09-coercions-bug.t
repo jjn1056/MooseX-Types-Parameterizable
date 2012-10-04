@@ -55,6 +55,8 @@ my $varchar = Varchar[5];
 is $varchar->coerce([qw/j o h n/]), 'john', 
   'coerce straight up works';
 
+#ok $varchar->assert_coerce([qw/j o h n/]), 'check with assert_coerce is good';
+
 ok $varchar->has_coercion, 'I have a coercion!';
 
 {
@@ -66,8 +68,11 @@ ok $varchar->has_coercion, 'I have a coercion!';
   has name=>(is=>'rw', isa=>$varchar,coerce=>1);
 }
 
-ok my $person = Person->new,
+ok my $person = Person->new(name=>[qw/a b c/]),
   'Created a testable object';
+
+is $person->name, 'abc',
+  'coerce during instantiation is good';
 
 is $person->meta->get_attribute('name')->type_constraint->coerce([qw/j o h n/]), 'john',
   'coerce on the attribute via meta object works';

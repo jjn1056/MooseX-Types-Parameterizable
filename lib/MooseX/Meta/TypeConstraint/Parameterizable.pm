@@ -339,6 +339,11 @@ More method modification to support dispatch coerce to a parent.
 
 =cut
 
+around 'has_coercion', sub {
+  my ($orig, $self) = @_;
+  $self->$orig ? 1 : $self->parent->has_coercion;
+};
+
 around 'coerce' => sub {
     my ($coerce, $self, @args) = @_;
     if($self->has_constraining_value) {
