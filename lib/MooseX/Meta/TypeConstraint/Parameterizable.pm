@@ -80,14 +80,6 @@ This class defines the following methods.
 
 Do some post build stuff, mostly make sure we set the correct coercion object.
 
-around 'new' => sub {
-    my ($new, $class, @args) = @_;
-    my $self = $class->$new(@args);
-    my $coercion = MooseX::Meta::TypeCoercion::Parameterizable->new(type_constraint => $self);
-    $self->coercion($coercion);
-    return $self;
-};
-
 =cut
 
 sub BUILD {
@@ -382,5 +374,5 @@ it under the same terms as Perl itself.
 
 =cut
 
-__PACKAGE__->meta->make_immutable(inline_constructor => 0);
+__PACKAGE__->meta->make_immutable(inline_constructor => 0,  inline_accessors => 0);
 

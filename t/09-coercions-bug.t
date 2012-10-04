@@ -5,7 +5,7 @@ use Moose;
 use MooseX::Types::Parameterizable qw(Parameterizable);
 use MooseX::Types::Moose qw(Int Str HashRef ArrayRef);
 use MooseX::Types -declare=>[qw(
-    Varchar InfoHash OlderThanAge
+    Varchar InfoHash OlderThanAge HashRefsOfInts
 )];
 
 
@@ -52,10 +52,11 @@ via {
     return $age;
 };
 
-
 my $olderthan = OlderThanAge[older_than=>2];
 my $varchar = Varchar[5];
 
+is $varchar->coerce([qw/j o h n/]), 'john', 
+  'coerce straight up works';
 
 
 has age=>(is=>'rw', isa=>$olderthan, coerce=>1);
