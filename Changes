@@ -1,5 +1,12 @@
 Revision history for MooseX-Types-Parameterized
 
+0.09  TBA
+        - Convert to Dist::Zilla
+        - code formating sytle changes
+        - Upped dependencies to modern values (this might break your older
+          applications so please test before releasing to production!)
+
+
 0.08  08 February 2012
         - POD fixes (chocolateboy++)
         - remove pointless dependency (chocolateboy++)
