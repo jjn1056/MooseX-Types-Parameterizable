@@ -8,14 +8,9 @@ use MooseX::Types -declare=>[qw(
     PositiveRangedInt2 PositiveInt PositiveRange NameAge NameBetween18and35Age
 )];
 
-eval "use MooseX::Types::Structured qw(Tuple Dict slurpy)";if($@) {
-  plan skip_all => "MooseX::Types:Structured Required for advanced Tests";
-} else {
-  eval "use Set::Scalar"; if($@) {
-    plan skip_all => "Set::Scalar Required for advanced Tests";
-  } 
-} 
+use Test::Requires qw/MooseX::Types::Structured Set::Scalar/;
 
+MooseX::Types::Structured->import(qw(Tuple Dict slurpy) );
 
 ok class_type("Set::Scalar"), 'Created Set::Scalar class_type';
 ok subtype( Set, as "Set::Scalar"), 'Created Set subtype';

@@ -2,6 +2,8 @@ package ## Hide from PAUSE
  MooseX::Meta::TypeCoercion::Parameterizable;
 
 use Moose;
+use MooseX::NonMoose;
+
 extends 'Moose::Meta::TypeCoercion';
 
 =head1 NAME
@@ -98,3 +100,4 @@ it under the same terms as Perl itself.
 =cut
 
 __PACKAGE__->meta->make_immutable(inline_constructor => 0);
+

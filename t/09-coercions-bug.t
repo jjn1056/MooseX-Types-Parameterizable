@@ -19,10 +19,9 @@ message { "'$_[0]' is too long (max length $_[1])" };
 
 coerce Varchar,
 from ArrayRef,
-via { 
+via {
   my ($arrayref, $int) = @_;
   my $str = join('', @$arrayref);
-#  die $str;
   return $str;
 };
 
@@ -56,6 +55,8 @@ via {
 
 my $olderthan = OlderThanAge[older_than=>2];
 my $varchar = Varchar[5];
+
+
 
 has age=>(is=>'rw', isa=>$olderthan, coerce=>1);
 has name=>(is=>'rw', isa=>$varchar,coerce=>1);

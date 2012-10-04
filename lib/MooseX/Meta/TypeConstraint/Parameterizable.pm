@@ -2,6 +2,7 @@ package ## Hide from PAUSE
  MooseX::Meta::TypeConstraint::Parameterizable;
 
 use Moose;
+use MooseX::NonMoose;
 use Moose::Util::TypeConstraints ();
 use MooseX::Meta::TypeCoercion::Parameterizable;
 use Scalar::Util qw(blessed);
@@ -79,8 +80,6 @@ This class defines the following methods.
 
 Do some post build stuff, mostly make sure we set the correct coercion object.
 
-=cut
-
 around 'new' => sub {
     my ($new, $class, @args) = @_;
     my $self = $class->$new(@args);
@@ -88,6 +87,14 @@ around 'new' => sub {
     $self->coercion($coercion);
     return $self;
 };
+
+=cut
+
+sub BUILD {
+  my $self = shift;
+  my $coercion = MooseX::Meta::TypeCoercion::Parameterizable->new(type_constraint => $self);
+    $self->coercion($coercion);
+}
 
 =head2 parameterize (@args)
 
