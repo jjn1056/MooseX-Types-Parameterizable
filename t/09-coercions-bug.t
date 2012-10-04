@@ -1,7 +1,6 @@
 package Person;
 
-use Test::More;
-
+use Test::Most;
 use Moose;
 use MooseX::Types::Parameterizable qw(Parameterizable);
 use MooseX::Types::Moose qw(Int Str HashRef ArrayRef);
