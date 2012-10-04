@@ -64,12 +64,13 @@ ok $varchar->has_coercion, 'I have a coercion!';
     
   has age=>(is=>'rw', isa=>$olderthan, coerce=>1);
   has name=>(is=>'rw', isa=>$varchar,coerce=>1);
-
-  Person->meta->make_immutable();
 }
 
 ok my $person = Person->new,
   'Created a testable object';
+
+is $person->meta->get_attribute('name')->type_constraint->coerce([qw/j o h n/]), 'john',
+  'coerce on the attribute via meta object works';
 
 ok $person->name('john'), 'john is less than 5 chars';
 is $person->name([qw/j o h n/]), 'john', 'j o h n is john';
