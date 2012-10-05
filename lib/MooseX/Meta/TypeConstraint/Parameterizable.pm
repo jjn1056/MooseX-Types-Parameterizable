@@ -339,10 +339,32 @@ More method modification to support dispatch coerce to a parent.
 
 =cut
 
-around 'has_coercion', sub {
-  my ($orig, $self) = @_;
-  $self->$orig ? 1 : $self->parent->has_coercion;
-};
+#around 'has_coercion', sub {
+#  my ($orig, $self) = @_;
+#  $self->$orig ? 1 : $self->parent->has_coercion;
+#i};
+#
+#
+
+sub assert_coerce {
+    my $self = shift;
+ 
+    my $coercion = $self->coercion || $self->parent->coercion;
+ 
+    unless ($coercion) {
+        require Moose;
+        Moose->throw_error("Cannot coerce without a type coercion");
+    }
+ 
+    return $_[0] if $self->check($_[0]);
+ 
+    my $result = $self->coerce(@_);
+
+    $self->assert_valid($result);
+ 
+    return $result;
+}
+
 
 around 'coerce' => sub {
     my ($coerce, $self, @args) = @_;

@@ -55,7 +55,8 @@ my $varchar = Varchar[5];
 is $varchar->coerce([qw/j o h n/]), 'john', 
   'coerce straight up works';
 
-#ok $varchar->assert_coerce([qw/j o h n/]), 'check with assert_coerce is good';
+ok $varchar->assert_coerce([qw/j o h n/]),
+  'check with assert_coerce is good';
 
 ok $varchar->has_coercion, 'I have a coercion!';
 
