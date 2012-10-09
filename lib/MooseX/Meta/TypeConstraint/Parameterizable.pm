@@ -342,9 +342,7 @@ More method modification to support dispatch coerce to a parent.
 #around 'has_coercion', sub {
 #  my ($orig, $self) = @_;
 #  $self->$orig ? 1 : $self->parent->has_coercion;
-#i};
-#
-#
+#};
 
 sub assert_coerce {
     my $self = shift;
@@ -365,9 +363,8 @@ sub assert_coerce {
     return $result;
 }
 
-
-around 'coerce' => sub {
-    my ($coerce, $self, @args) = @_;
+sub coerce  {
+    my ($self, @args) = @_;
     if($self->has_constraining_value) {
         push @args, $self->constraining_value;
     }
@@ -384,7 +381,7 @@ around 'coerce' => sub {
         my $parent = $self->parent;
         return $parent->coerce(@args);
     }
-};
+}
 
 =head1 SEE ALSO
 

@@ -2,7 +2,7 @@ use Test::Most;
 use MooseX::Types::Parameterizable qw(Parameterizable);
 use MooseX::Types::Moose qw(Int Str HashRef ArrayRef);
 use MooseX::Types -declare=>[qw(
-    Varchar InfoHash OlderThanAge HashRefsOfInts
+    Varchar InfoHash OlderThanAge HashRefsOfInts MyInt
 )];
 
 
@@ -49,6 +49,16 @@ via {
     return $age;
 };
 
+subtype MyInt,
+as Int;
+
+my $myint = MyInt;
+
+coerce $myint, from ArrayRef, via { scalar(@$_) };
+
+is $myint->coerce([qw/j o h n/]), 4, 
+  'coerce straight up works for myint';
+
 my $olderthan = OlderThanAge[older_than=>2];
 my $varchar = Varchar[5];
 
@@ -64,7 +74,8 @@ ok $varchar->has_coercion, 'I have a coercion!';
   package Person;
 
   use Moose;
-    
+
+  has control=>(is=>'rw',isa=>$myint,coerce=>1);
   has age=>(is=>'rw', isa=>$olderthan, coerce=>1);
   has name=>(is=>'rw', isa=>$varchar,coerce=>1);
 }
@@ -75,11 +86,18 @@ ok my $person = Person->new(name=>[qw/a b c/]),
 is $person->name, 'abc',
   'coerce during instantiation is good';
 
+ok $person->control([qw/a b c/]), 'control coercible';
+is $person->control, 3, 'control works as expected';
+
 is $person->meta->get_attribute('name')->type_constraint->coerce([qw/j o h n/]), 'john',
   'coerce on the attribute via meta object works';
 
 ok $person->name('john'), 'john is less than 5 chars';
-is $person->name([qw/j o h n/]), 'john', 'j o h n is john';
+
+$person->meta->get_attribute('name')->set_value($person, [qw/j o h X/]);
+is $person->meta->get_attribute('name')->get_value($person), 'johX', 'j o h n is john';
+
+is $person->name([qw/j o h X/]), 'johX', 'j o h n is john';
 
 ok $person->age(3),
   '3 is older than 2';
