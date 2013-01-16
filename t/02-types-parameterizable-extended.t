@@ -7,10 +7,9 @@ use MooseX::Types -declare=>[qw(
     Set UniqueInt UniqueInSet Range RangedInt PositiveRangedInt1
     PositiveRangedInt2 PositiveInt PositiveRange NameAge NameBetween18and35Age
 )];
+use MooseX::Types::Structured qw(Dict Tuple slurpy);
 
 use Test::Requires qw/MooseX::Types::Structured Set::Scalar/;
-
-MooseX::Types::Structured->import(qw(Tuple Dict slurpy) );
 
 ok class_type("Set::Scalar"), 'Created Set::Scalar class_type';
 ok subtype( Set, as "Set::Scalar"), 'Created Set subtype';
