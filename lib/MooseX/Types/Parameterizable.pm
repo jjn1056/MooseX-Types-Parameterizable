@@ -23,7 +23,7 @@ __END__
 
 =head1 NAME
 
-MooseX::Types::Parameterizable - Create your own Parameterizable Types.
+(DEPRECATED) MooseX::Types::Parameterizable - Create your own Parameterizable Types.
 
 =head1 SYNOPSIS
 
@@ -94,6 +94,8 @@ code with this version!
 Options and code are welcomed to help with this.  Thanks!
 
 =head1 DESCRIPTION
+
+This module is Deprecated, consider using L<Types::Tiny>.
 
 A L<MooseX::Types> library for creating parameterizable types.  A parameterizable
 type constraint for all intents and uses is a subclass of a parent type, but

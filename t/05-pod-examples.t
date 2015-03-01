@@ -18,7 +18,7 @@ use Test::Most;
 
     coerce Varchar,
       from ArrayRef,
-      via { 
+      via {
         my ($arrayref, $int) = @_;
         join('', @$arrayref);
       };
@@ -35,7 +35,7 @@ use Test::Most;
 
     has varchar_five => (isa=>Varchar[5], is=>'ro', coerce=>1);
     has varchar_ten => (isa=>Varchar[10], is=>'ro');
-  
+
     my $object1 = __PACKAGE__->new(
         varchar_five => '1234',
         varchar_ten => '123456789',
@@ -84,13 +84,13 @@ use Test::Most;
             return ($value >= $range->{min} &&
              $value <= $range->{max});
         };
-        
+
     Test::More::ok RangedInt([{min=>10,max=>100}])->check(50);
     Test::More::ok !RangedInt([{min=>50, max=>75}])->check(99);
 
     eval {
-        Test::More::ok !RangedInt([{min=>99, max=>10}])->check(10); 
-    }; 
+        Test::More::ok !RangedInt([{min=>99, max=>10}])->check(10);
+    };
 
     Test::More::ok $@, 'There was an error';
     Test::More::like $@, qr(Not a Valid range), 'Correct custom error';
@@ -99,8 +99,8 @@ use Test::Most;
     Test::More::ok ! RangedInt([min=>50, max=>75])->check(99);
 
     eval {
-        RangedInt([min=>99, max=>10])->check(10); 
-    }; 
+        RangedInt([min=>99, max=>10])->check(10);
+    };
 
     Test::More::ok $@, 'There was an error';
     Test::More::like $@, qr(Not a Valid range), 'Correct custom error';
@@ -114,7 +114,7 @@ use Test::Most;
     use Moose;
     use MooseX::Types::Parameterizable qw(Parameterizable);
     use MooseX::Types::Moose qw(HashRef Int);
-    use MooseX::Types -declare=>[qw(Range RangedInt PositiveRangedInt 
+    use MooseX::Types -declare=>[qw(Range RangedInt PositiveRangedInt
         PositiveInt PositiveRange PositiveRangedInt2 )];
 
     ## Minor change from docs to avoid additional test dependencies
@@ -133,19 +133,19 @@ use Test::Most;
             return ($value >= $range->{min} &&
              $value <= $range->{max});
         };
-        
+
     subtype PositiveRangedInt,
         as RangedInt,
         where {
-            shift >= 0;              
+            shift >= 0;
         };
 
     Test::More::ok PositiveRangedInt([{min=>10,max=>100}])->check(50);
     Test::More::ok !PositiveRangedInt([{min=>50, max=>75}])->check(99);
 
     eval {
-        Test::More::ok !PositiveRangedInt([{min=>99, max=>10}])->check(10); 
-    }; 
+        Test::More::ok !PositiveRangedInt([{min=>99, max=>10}])->check(10);
+    };
 
     Test::More::ok $@, 'There was an error';
     Test::More::like $@, qr(Not a Valid range), 'Correct custom error';
@@ -154,8 +154,8 @@ use Test::Most;
     Test::More::ok ! PositiveRangedInt([min=>50, max=>75])->check(99);
 
     eval {
-        PositiveRangedInt([min=>99, max=>10])->check(10); 
-    }; 
+        PositiveRangedInt([min=>99, max=>10])->check(10);
+    };
 
     Test::More::ok $@, 'There was an error';
     Test::More::like $@, qr(Not a Valid range), 'Correct custom error';
@@ -176,7 +176,7 @@ use Test::Most;
     subtype PositiveRange,
       as Range[PositiveInt],
       message { "[ $_->{max} not > $_->{min} ] is not a positive range " };
-    
+
     ## create subtype via reparameterizing
     subtype PositiveRangedInt2,
         as RangedInt[PositiveRange];
@@ -185,8 +185,8 @@ use Test::Most;
     Test::More::ok !PositiveRangedInt2([{min=>50, max=>75}])->check(99);
 
     eval {
-        Test::More::ok !PositiveRangedInt2([{min=>99, max=>10}])->check(10); 
-    }; 
+        Test::More::ok !PositiveRangedInt2([{min=>99, max=>10}])->check(10);
+    };
 
     Test::More::ok $@, 'There was an error';
     Test::More::like $@, qr(not a positive range), 'Correct custom error';
@@ -233,7 +233,11 @@ use Test::Most;
 
     Test::More::is MySpecialVarchar([40])->coerce("abc"), 'abc';
     Test::More::is_deeply( MySpecialVarchar([40])->coerce([qw/d e f/]), [qw/d e f/]);
-    Test::More::is MySpecialVarchar([40])->coerce({a=>1, b=>2}), 'ab';
+    SKIP: {
+        Test::More::skip 'Skipping as part of deprecation process', 1;
+
+        Test::More::is MySpecialVarchar([40])->coerce({a=>1, b=>2}), 'ab';
+    };
 }
 
 {
