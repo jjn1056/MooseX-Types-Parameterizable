@@ -1,6 +1,6 @@
 # NAME
 
-MooseX::Types::Parameterizable - Create your own Parameterizable Types.
+(DEPRECATED) MooseX::Types::Parameterizable - Create your own Parameterizable Types.
 
 # SYNOPSIS
 
@@ -59,6 +59,8 @@ varchar_five coerces as expected
 See t/05-pod-examples.t for runnable versions of all POD code
 
 # DESCRIPTION
+
+This module is now deprecated. Consider using [Types::Tiny](https://metacpan.org/pod/Types::TypeTiny).
 
 A [MooseX::Types](http://search.cpan.org/perldoc?MooseX::Types) library for creating parameterizable types.  A parameterizable
 type constraint for all intents and uses is a subclass of a parent type, but
