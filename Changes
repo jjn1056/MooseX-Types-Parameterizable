@@ -1,6 +1,8 @@
 Revision history for MooseX-Types-Parameterized
 
-0.09  TBA
+0.09  18 October 2022
+        - SKIP tests busted by Moose 2.0
+        - Added warning note to avoid for new code
         - Convert to Dist::Zilla
         - code formating sytle changes
         - Upped dependencies to modern values (this might break your older

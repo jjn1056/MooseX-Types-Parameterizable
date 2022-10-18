@@ -225,7 +225,7 @@ use Test::Most;
 
     coerce MySpecialVarchar,
       from HashRef,
-      via { join '', keys %$_ };
+      via { join '', sort keys %$_ };
 
 
     Test::More::is Varchar([40])->coerce("abc"), 'abc';

@@ -2,7 +2,7 @@ package MooseX::Types::Parameterizable;
 
 use 5.008;
 
-our $VERSION   = '0.08';
+our $VERSION   = '0.09';
 $VERSION = eval $VERSION;
 
 use Moose::Util::TypeConstraints;
@@ -92,6 +92,16 @@ released this package).  Please test carefully before upgrading your production
 code with this version!
 
 Options and code are welcomed to help with this.  Thanks!
+
+B<Update from 2022>:  Its been ten years and we never figured out all these issues that
+arose from Moose 2.0.  I got all the tests to pass except for some issues around
+parameterized types and coercions.   In the interests of not having failed code
+on CPAN I'm releasing all the modern updates and skipping that one block of tests.
+However I recommend considering this an interesting proof of concept and building
+a new implementation from start, probably based on L<Type::Tiny> which also works
+with L<Moo>.
+
+As a result I recomend not using this module for new code.
 
 =head1 DESCRIPTION
 
