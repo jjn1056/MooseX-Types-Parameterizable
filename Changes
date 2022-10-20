@@ -1,4 +1,7 @@
-Revision history for MooseX-Types-Parameterized
+Revision history for MooseX-Types-Parameterizable
+
+0.10  20 October 2022
+        - Fixed broken metadata
 
 0.09  18 October 2022
         - SKIP tests busted by Moose 2.0
